@@ -1,6 +1,6 @@
 site:
-  title: "RHOSP Networking Break-fix Practice - Diagnosing Destination Host Unreachable and No Route to Host Errors"
-  start_page: rhosp-bfx-019::index.adoc
+  title: "RHOSP instance connectivity Break-Fix 9Resolving 'No Route to Host' and 'Destination Host Unreachable' for SSH"
+  start_page: rhosp-bfx-026::index.adoc
 
 content:
   sources:

@@ -1,5 +1,5 @@
-name: rhosp-bfx-019
-title: RHOSP Networking Break-fix Practice - Diagnosing Destination Host Unreachable and No Route to Host Errors
+name: rhosp-bfx-026
+title: "RHOSP instance connectivity Break-Fix 9Resolving 'No Route to Host' and 'Destination Host Unreachable' for SSH"
 version: 1
 nav:
 - modules/ROOT/nav.adoc
