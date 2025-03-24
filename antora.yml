@@ -1,5 +1,5 @@
-name: REPLACEREPONAME
-title: FIXME Course Title
+name: rhosp-bfx-019
+title: RHOSP Networking Break-fix Practice - Diagnosing Destination Host Unreachable and No Route to Host Errors
 version: 1
 nav:
 - modules/ROOT/nav.adoc
