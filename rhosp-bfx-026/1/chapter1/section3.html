@@ -3,8 +3,9 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Appendix :: RHOSP instance connectivity Break-Fix 9Resolving &#x27;No Route to Host&#x27; and &#x27;Destination Host Unreachable&#x27; for SSH</title>
-    <link rel="prev" href="../chapter2/section2.html">
+    <title>Break-fix Scenario :: RHOSP instance connectivity Break-Fix 9Resolving &#x27;No Route to Host&#x27; and &#x27;Destination Host Unreachable&#x27; for SSH</title>
+    <link rel="prev" href="section2.html">
+    <link rel="next" href="../chapter2/index.html">
     <meta name="generator" content="Antora 3.1.3">
     <link rel="stylesheet" href="../../../_/css/site.css">
     <script>var uiRootPath = '../../../_'</script>
@@ -54,16 +55,16 @@
 <ul class="nav-list">
   <li class="nav-item" data-depth="1">
     <button class="nav-item-toggle"></button>
-    <a class="nav-link" href="../chapter1/index.html">What’s in this break-fix?</a>
+    <a class="nav-link" href="index.html">What’s in this break-fix?</a>
 <ul class="nav-list">
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../chapter1/section1.html">Break-fix activity</a>
+    <a class="nav-link" href="section1.html">Break-fix activity</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../chapter1/section2.html">Check your work</a>
+    <a class="nav-link" href="section2.html">Check your work</a>
   </li>
-  <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../chapter1/section3.html">Break-fix Scenario</a>
+  <li class="nav-item is-current-page" data-depth="2">
+    <a class="nav-link" href="section3.html">Break-fix Scenario</a>
   </li>
 </ul>
   </li>
@@ -87,8 +88,8 @@
   </li>
   <li class="nav-item" data-depth="0">
 <ul class="nav-list">
-  <li class="nav-item is-current-page" data-depth="1">
-    <a class="nav-link" href="appendix.html">Appendix</a>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../appendix/appendix.html">Appendix</a>
   </li>
 </ul>
   </li>
@@ -121,7 +122,8 @@
 <nav class="breadcrumbs" aria-label="breadcrumbs">
   <ul>
     <li><a href="../index.html">RHOSP instance connectivity Break-Fix 9Resolving 'No Route to Host' and 'Destination Host Unreachable' for SSH</a></li>
-    <li><a href="appendix.html">Appendix</a></li>
+    <li><a href="index.html">What’s in this break-fix?</a></li>
+    <li><a href="section3.html">Break-fix Scenario</a></li>
   </ul>
 </nav>
 </div>
@@ -130,12 +132,92 @@
   <div class="toc-menu"></div>
 </aside>
 <article class="doc">
-<h1 class="page">Appendix</h1>
+<h1 class="page">Break-fix Scenario</h1>
+<div id="preamble">
+<div class="sectionbody">
 <div class="paragraph">
-<p>Content for Appendix&#8230;&#8203;</p>
+<p>Objectives:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Investigate the instance connectivity issue in Red Hat OpenStack Platform.</p>
+</li>
+<li>
+<p>Solve the instance connectivity in the hands-on lab environment.</p>
+</li>
+<li>
+<p>Familarize with Distributed Virtual Routing (DVR) Functionality.</p>
+</li>
+<li>
+<p>Derive the tap interface name.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Scenario:
+Your team manages a Red Hat OpenStack Platform (RHOSP) infrastructure used by an important development team for your company. There was a requirement from your internal networking team to have Open Virtual Network (OVN), an open-source software-defined networking (SDN) solution that seamlessly integrates with OpenStack. Recently networking team noticed that there is connectivity issue with instance running in OpenStack envrionment.</p>
+</div>
+<div class="paragraph">
+<p>They noticed the following error:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>(overcloud) [stack@director ~]$ ssh -i /tmp/scenario-bfx026-key.pem cirros@172.25.252.254
+ssh: connect to host 172.25.252.254 port 22: No route to host</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In the preceding output, ip address can differ in your lab environemnt.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_recreate_scenario"><a class="anchor" href="#_recreate_scenario"></a>Recreate scenario</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Recreate this scenario by running the lab script on director VM as stack user:</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>[student@workstation ~]$ ssh stack@director
+
+[stack@director ~]$ source overcloudrc
+
+(overcloud) [stack@director ~]$ lab start bfx026
+Running start action against scenario bfx026
+Run the following command:
+ssh -i /tmp/scenario-bfx026-key.pem cirros@172.25.252.254</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In the preceding output, ip address can differ in your lab environemnt.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>This breaks the connectivity to instance.</p>
+</li>
+<li>
+<p>To ensure scenario is recreated, run the ssh command from the previous output:</p>
+<div class="listingblock">
+<div class="content">
+<pre>(overcloud) [stack@director ~]$ ssh -i /tmp/scenario-bfx026-key.pem cirros@172.25.252.254
+ssh: connect to host 172.25.252.254 port 22: Connection timed out</pre>
+</div>
+</div>
+</li>
+</ul>
+</div>
+</div>
 </div>
 <nav class="pagination">
-  <span class="prev"><a href="../chapter2/section2.html">Guided solution (page 2)</a></span>
+  <span class="prev"><a href="section2.html">Check your work</a></span>
+  <span class="next"><a href="../chapter2/index.html">Guided solution</a></span>
 </nav>
 </article>
   </div>

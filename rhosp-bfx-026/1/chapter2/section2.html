@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Guided solution (page 2 of 2) :: RHOSP instance connectivity Break-Fix 9Resolving &#x27;No Route to Host&#x27; and &#x27;Destination Host Unreachable&#x27; for SSH</title>
+    <title>Guided solution (page 2) :: RHOSP instance connectivity Break-Fix 9Resolving &#x27;No Route to Host&#x27; and &#x27;Destination Host Unreachable&#x27; for SSH</title>
     <link rel="prev" href="section1.html">
     <link rel="next" href="../appendix/appendix.html">
     <meta name="generator" content="Antora 3.1.3">
@@ -40,7 +40,7 @@
   <li class="nav-item" data-depth="0">
 <ul class="nav-list">
   <li class="nav-item" data-depth="1">
-    <a class="nav-link" href="../index.html">Home</a>
+    <a class="nav-link" href="../index.html">Red Hat OpenStack Platform: Break-fix Practice - Resolving No Route to Host and Destination Host Unreachable for SSH</a>
   </li>
 </ul>
   </li>
@@ -63,6 +63,9 @@
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../chapter1/section2.html">Check your work</a>
   </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../chapter1/section3.html">Break-fix Scenario</a>
+  </li>
 </ul>
   </li>
 </ul>
@@ -74,10 +77,10 @@
     <a class="nav-link" href="index.html">Guided solution</a>
 <ul class="nav-list">
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="section1.html">Guided solution (page 1 of 2)</a>
+    <a class="nav-link" href="section1.html">Guided solution (page 1)</a>
   </li>
   <li class="nav-item is-current-page" data-depth="2">
-    <a class="nav-link" href="section2.html">Guided solution (page 2 of 2)</a>
+    <a class="nav-link" href="section2.html">Guided solution (page 2)</a>
   </li>
 </ul>
   </li>
@@ -120,7 +123,7 @@
   <ul>
     <li><a href="../index.html">RHOSP instance connectivity Break-Fix 9Resolving 'No Route to Host' and 'Destination Host Unreachable' for SSH</a></li>
     <li><a href="index.html">Guided solution</a></li>
-    <li><a href="section2.html">Guided solution (page 2 of 2)</a></li>
+    <li><a href="section2.html">Guided solution (page 2)</a></li>
   </ul>
 </nav>
 </div>
@@ -129,12 +132,404 @@
   <div class="toc-menu"></div>
 </aside>
 <article class="doc">
-<h1 class="page">Guided solution (page 2 of 2)</h1>
+<h1 class="page">Guided solution (page 2)</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Capture ARP request packets using tcpdump.</p>
+<div class="listingblock">
+<div class="content">
+<pre>[root@overcloud-novacompute-0 ~]# tcpdump -i ens4 arp -c1 -w arp-request.pcap
+dropped privs to tcpdump
+tcpdump: listening on ens4, link-type EN10MB (Ethernet), capture size 262144 bytes
+1 packet captured
+1 packet received by filter
+0 packets dropped by kernel</pre>
+</div>
+</div>
 <div class="paragraph">
-<p>FIXME: Provide step-by-step instructions here to resolve the issue.</p>
+<p>Before running the above command, ensure to ping the floating IP from another terminal to generate the necessary packets.</p>
+</div>
+</li>
+<li>
+<p>Check if the captured packets are ARP requests for the floating IP.</p>
+<div class="listingblock">
+<div class="content">
+<pre>[root@overcloud-novacompute-0 ~]# tcpdump -r arp-request.pcap
+reading from file arp-request.pcap, link-type EN10MB (Ethernet), snapshot length 262144
+dropped privs to tcpdump
+18:19:14.485243 ARP, Request who-has 172.25.250.186 tell serverb.lab.example.com, length 28</pre>
+</div>
+</div>
+</li>
+<li>
+<p>Identify the OpenFlow protocol number for network interface ens3.</p>
+<div class="listingblock">
+<div class="content">
+<pre>[root@overcloud-novacompute-0 ~]# ovs-ofctl show br-ex
+OFPT_FEATURES_REPLY (xid=0x2): dpid:000052540001fa1e
+n_tables:254, n_buffers:0
+capabilities: FLOW_STATS TABLE_STATS PORT_STATS QUEUE_STATS ARP_MATCH_IP
+actions: output enqueue set_vlan_vid set_vlan_pcp strip_vlan mod_dl_src mod_dl_dst mod_nw_src mod_nw_dst mod_nw_tos mod_tp_src mod_tp_dst
+ 1(ens4): addr:52:54:00:01:fa:1e
+     config:     0
+     state:      0
+     speed: 0 Mbps now, 0 Mbps max
+ LOCAL(br-ex): addr:52:54:00:01:fa:1e
+     config:     0
+     state:      0
+     speed: 0 Mbps now, 0 Mbps max
+OFPT_GET_CONFIG_REPLY (xid=0x4): frags=normal miss_send_len=0</pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>ens4 is associated with port number 1</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</li>
+<li>
+<p>Perform the OpenFlow protocol trace on br-ex with in_port set to 1.</p>
+<div class="listingblock">
+<div class="content">
+<pre>[root@overcloud-novacompute-0 ~]# ovs-appctl ofproto/trace br-ex in_port=1 $(ovs-pcap arp-request.pcap)
+Flow: arp,in_port=1,vlan_tci=0x0000,dl_src=52:54:00:04:fa:0b,dl_dst=ff:ff:ff:ff:ff:ff,arp_spa=172.25.250.11,arp_tpa=172.25.250.186,arp_op=1,arp_sha=52:54:00:04:fa:0b,arp_tha=00:00:00:00:00:00
+
+bridge("br-ex")
+---------------
+ 0. priority 0
+    NORMAL
+     -&gt; no learned MAC for destination, flooding
+
+Final flow: unchanged
+Megaflow: recirc_id=0,eth,arp,in_port=1,dl_src=52:54:00:04:fa:0b,dl_dst=ff:ff:ff:ff:ff:ff,arp_spa=172.25.250.11,arp_tpa=172.25.250.186,arp_op=1
+Datapath actions: 3</pre>
+</div>
+</div>
+</li>
+<li>
+<p>Analyze the trace output. In this case, the trace shows that the ARP request is flooding, and "Datapath actions: 3" indicates that it was delivered to br-ex (see output of below command).</p>
+<div class="listingblock">
+<div class="content">
+<pre>[root@overcloud-novacompute-0 ~]# ovs-dpctl show
+system@ovs-system:
+  lookups: hit:8175 missed:261 lost:0
+  flows: 3
+  masks: hit:9553 total:1 hit/pkt:1.13
+  cache: hit:7868 hit-rate:93.27%
+  caches:
+    masks-cache: size:256
+  port 0: ovs-system (internal)
+  port 1: genev_sys_6081 (geneve: packet_type=ptap)
+  port 2: br-int (internal)
+  port 3: br-ex (internal) &lt;&lt;==
+  port 4: br-tenant (internal)
+  port 5: ens4
+  port 6: ens8
+  port 7: tap389d4b6a-ff
+  port 8: tap266a1997-30</pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>"Data path 3" means the traffic was delivered to br-ex, which is a port on the br-ex bridge.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</li>
+<li>
+<p>Run tcpdump on br-ex.</p>
+<div class="listingblock">
+<div class="content">
+<pre>[root@overcloud-novacompute-0 ~]# tcpdump -envvi br-ex arp
+dropped privs to tcpdump
+tcpdump: listening on br-ex, link-type EN10MB (Ethernet), snapshot length 262144 bytes
+18:27:01.576214 52:54:00:04:fa:0b &gt; Broadcast, ethertype ARP (0x0806), length 42: Ethernet (len 6), IPv4 (len 4), Request who-has 172.25.250.186 tell 172.25.250.11, length 28
+18:27:02.610675 52:54:00:04:fa:0b &gt; Broadcast, ethertype ARP (0x0806), length 42: Ethernet (len 6), IPv4 (len 4), Request who-has 172.25.250.186 tell 172.25.250.11, length 28
+18:27:03.634665 52:54:00:04:fa:0b &gt; Broadcast, ethertype ARP (0x0806), length 42: Ethernet (len 6), IPv4 (len 4), Request who-has 172.25.250.186 tell 172.25.250.11, length 28</pre>
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>The output shows ARP requests, indicating that the traffic is indeed being received by the br-ex port.</p>
+</li>
+<li>
+<p>However, the issue lies in why this traffic is not making its way to br-int, which is crucial for proper network routing.</p>
+</li>
+<li>
+<p>There is a floating IP configured on a particular compute node.</p>
+</li>
+<li>
+<p>OVN (Open Virtual Network) is aware of this configuration.</p>
+</li>
+<li>
+<p>OVN creates a patch port between the provider network and br-int. * Importantly, each provider network has its own patch port connecting br-ex and br-int.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Review at the ovs-vsctl show output captured earlier, br-ex has only one port - ens4, which is the NIC (Network Interface Card) of the compute node.</p>
+<div class="listingblock">
+<div class="content">
+<pre>[root@overcloud-novacompute-1 ~]# ovs-vsctl show
+. . .
+    Bridge br-ex
+        fail_mode: standalone
+        Port ens4
+            Interface ens4
+        Port br-ex
+            Interface br-ex
+                type: internal
+
+. . .</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The key issue here is the absence of a patch port between br-int and br-ex. This missing link prevents traffic from flowing properly between the internal network (br-int) and the external network (br-ex).</p>
+</div>
+</li>
+<li>
+<p>Now let us examine your OVN bridge mappings.</p>
+<div class="listingblock">
+<div class="content">
+<pre>[root@overcloud-novacompute-0 ~]# ovs-vsctl list open .
+_uuid               : 1943688a-c727-41a4-b37e-21ae1365b65d
+bridges             : [222d9524-8f1c-435f-8d09-1501d7713a67, db5fb6b8-9537-4bc8-ba75-1a37d75c65a0, e06436d6-592d-42bd-b505-16a888e68feb]
+cur_cfg             : 34
+datapath_types      : [netdev, system]
+datapaths           : {system=419286a6-643f-4369-9a7d-7bd5ece4b5ad}
+db_version          : "8.3.1"
+dpdk_initialized    : false
+dpdk_version        : "DPDK 22.11.1"
+external_ids        : {hostname=overcloud-novacompute-0.localdomain, ovn-bridge=br-int, ovn-chassis-mac-mappings="datacentre:fa:16:3e:56:d4:c5", ovn-encap-ip="172.16.0.30", ovn-encap-tos="0", ovn-encap-type=geneve, ovn-match-northd-version="false", ovn-monitor-all="true", ovn-ofctrl-wait-before-clear="8000", ovn-openflow-probe-interval="60", ovn-remote="tcp:172.16.2.20:6642,tcp:172.16.2.21:6642,tcp:172.16.2.22:6642", ovn-remote-probe-interval="60000", rundir="/var/run/openvswitch", system-id="66626080-659f-4216-9e88-09896f923ba2"}
+iface_types         : [bareudp, erspan, geneve, gre, gtpu, internal, ip6erspan, ip6gre, lisp, patch, stt, system, tap, vxlan]
+manager_options     : [e588e661-07f8-4483-96f7-b829a6b2f921]
+next_cfg            : 34
+other_config        : {vlan-limit="0"}
+ovs_version         : "3.1.4"
+ssl                 : []
+statistics          : {}
+system_type         : rhel
+system_version      : "9.2"</pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Bridge mappings are important for determining which provider network corresponds to a specific bridge.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</li>
+<li>
+<p>This output shows the OVN setup, including bridges, data paths, and various configurations. Bridge mapping is stored in external_ids.</p>
+<div class="listingblock">
+<div class="content">
+<pre>external_ids        : {hostname=overcloud-novacompute-0.localdomain, ovn-bridge=br-int, ovn-chassis-mac-mappings="datacentre:fa:16:3e:56:d4:c5", ovn-encap-ip="172.16.0.30", ovn-encap-tos="0", ovn-encap-type=geneve, ovn-match-northd-version="false", ovn-monitor-all="true", ovn-ofctrl-wait-before-clear="8000", ovn-openflow-probe-interval="60", ovn-remote="tcp:172.16.2.20:6642,tcp:172.16.2.21:6642,tcp:172.16.2.22:6642", ovn-remote-probe-interval="60000", rundir="/var/run/openvswitch", system-id="66626080-659f-4216-9e88-09896f923ba2"}
+iface_types         : [bareudp, erspan, geneve, gre, gtpu, internal, ip6erspan, ip6gre, lisp, patch, stt, system, tap, vxlan]</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Notably, it lacks information about bridge mappings. Bridge mappings play an important role in associating a NIC with a provider network (commonly referred to as a datacenter network). In this case OVN does not know which provider network is the datacenter because it needs to map between the NIC and the provider network. To create this connection, we need to inform OVN about the relationship between the NIC and the provider network, typically named 'datacenter'.</p>
+</div>
+</li>
+<li>
+<p>Explore public network details.</p>
+<div class="listingblock">
+<div class="content">
+<pre>(overcloud) [stack@director ~]$ openstack network show public
++---------------------------+--------------------------------------+
+| Field                     | Value                                |
++---------------------------+--------------------------------------+
+| admin_state_up            | UP                                   |
+| availability_zone_hints   |                                      |
+| availability_zones        |                                      |
+| created_at                | 2024-02-21T17:34:06Z                 |
+| description               |                                      |
+| dns_domain                |                                      |
+| id                        | fdc2e2cc-0478-4efe-818c-6cb4b41f60ad |
+| ipv4_address_scope        | None                                 |
+| ipv6_address_scope        | None                                 |
+| is_default                | False                                |
+| is_vlan_transparent       | None                                 |
+| mtu                       | 1500                                 |
+| name                      | public                               |
+| port_security_enabled     | True                                 |
+| project_id                | 0192bf49efca46bf932847c75117578e     |
+| provider:network_type     | flat                                 |
+| provider:physical_network | datacentre                           |
+| provider:segmentation_id  | None                                 |
+| qos_policy_id             | None                                 |
+| revision_number           | 2                                    |
+| router:external           | External                             |
+| segments                  | None                                 |
+| shared                    | False                                |
+| status                    | ACTIVE                               |
+| subnets                   | 6e39bf54-58db-4233-9473-0de1d4660b18 |
+| tags                      |                                      |
+| updated_at                | 2024-02-21T17:34:10Z                 |
++---------------------------+--------------------------------------+</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In this output, find information about the "public" network, including its physical network, which is labeled as "datacentre."</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>| provider:physical_network | datacentre</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This is essentially a placeholder name that we define in configuration files. We need to specify which NIC on the compute nodes corresponds to this "datacenter" network.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>The issue at hand is that OVN does not inherently know that the br-ex` bridge represents the `datacenter`provider network.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>To establish this link, we must explicitly configure OVN bridge mappings. This configuration ensures that OVN associates br-ex with the datacenter network.</p>
+</div>
+</li>
+<li>
+<p>Configure the OVN bridge mapping settings using the ovs-vsctl set command.</p>
+<div class="listingblock">
+<div class="content">
+<pre>[root@overcloud-novacompute-1 ~]# ovs-vsctl set open . external_ids:ovn-bridge-mappings=datacentre:br-ex</pre>
+</div>
+</div>
+</li>
+<li>
+<p>Re-run the ovs-vsctl show command to verify that a patch port has been created between br-int and br-ex.</p>
+<div class="listingblock">
+<div class="content">
+<pre>[root@overcloud-novacompute-1 ~]# ovs-vsctl show
+. . .
+    Bridge br-int
+        fail_mode: secure
+        datapath_type: system
+. . .
+        Port patch-br-int-to-provnet-50f840c2-e06d-440d-90d5-42db9367e215
+            Interface patch-br-int-to-provnet-50f840c2-e06d-440d-90d5-42db9367e215
+                type: patch
+                options: {peer=patch-provnet-50f840c2-e06d-440d-90d5-42db9367e215-to-br-int}
+. . .
+    Bridge br-ex
+        fail_mode: standalone
+        Port patch-provnet-50f840c2-e06d-440d-90d5-42db9367e215-to-br-int
+            Interface patch-provnet-50f840c2-e06d-440d-90d5-42db9367e215-to-br-int
+                type: patch
+                options: {peer=patch-br-int-to-provnet-50f840c2-e06d-440d-90d5-42db9367e215}
+        Port br-ex
+            Interface br-ex
+                type: internal
+        Port ens4
+            Interface ens4
+. . .</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This connection is crucial for proper network communication. By addressing this missing link, we can ensure that traffic flows smoothly between the internal and external networks, thus resolving the connectivity issue we encountered.</p>
+</div>
+</li>
+<li>
+<p>Test ssh and ping again to ensure that both are now working.</p>
+<div class="listingblock">
+<div class="content">
+<pre>(overcloud) [stack@director ~]$ ping 172.25.250.186 -c 1
+PING 172.25.250.186 (172.25.250.186) 56(84) bytes of data.
+64 bytes from 172.25.250.186: icmp_seq=1 ttl=63 time=5.81 ms
+
+--- 172.25.250.186 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 5.811/5.811/5.811/0.000 ms
+
+(overcloud) [stack@director ~]$ ssh -i /tmp/scenario-9-key.pem cirros@172.25.250.186
+Warning: Permanently added '172.25.250.186' (ECDSA) to the list of known hosts.
+sign_and_send_pubkey: no mutual signature supported
+cirros@172.25.250.186's password:
+$ uname -r
+5.3.0-26-generic
+$exit
+Connection to 172.25.250.186 closed.</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Note that for DVR, bridge mappings are required on compute nodes to access the provider network (public). This would ensure connectivity to the floating IP.</p>
+</div>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_evaluation"><a class="anchor" href="#_evaluation"></a>Evaluation</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>As the stack user on the director machine, use the lab command to grade your work. Correct any reported failures and rerun the command until successful.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>[stack@director ~]$ lab grade bfx026</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_finish"><a class="anchor" href="#_finish"></a>Finish</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Run the lab finish command to complete this exercise. This step is important to ensure that resources from previous exercises do not impact upcoming exercises.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>[stack@director ~]$ lab finish bfx026</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This concludes the section.</p>
+</div>
+</div>
 </div>
 <nav class="pagination">
-  <span class="prev"><a href="section1.html">Guided solution (page 1 of 2)</a></span>
+  <span class="prev"><a href="section1.html">Guided solution (page 1)</a></span>
   <span class="next"><a href="../appendix/appendix.html">Appendix</a></span>
 </nav>
 </article>

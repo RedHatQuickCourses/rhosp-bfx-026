@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Guided solution (page 1 of 2) :: RHOSP instance connectivity Break-Fix 9Resolving &#x27;No Route to Host&#x27; and &#x27;Destination Host Unreachable&#x27; for SSH</title>
+    <title>Guided solution (page 1) :: RHOSP instance connectivity Break-Fix 9Resolving &#x27;No Route to Host&#x27; and &#x27;Destination Host Unreachable&#x27; for SSH</title>
     <link rel="prev" href="index.html">
     <link rel="next" href="section2.html">
     <meta name="generator" content="Antora 3.1.3">
@@ -40,7 +40,7 @@
   <li class="nav-item" data-depth="0">
 <ul class="nav-list">
   <li class="nav-item" data-depth="1">
-    <a class="nav-link" href="../index.html">Home</a>
+    <a class="nav-link" href="../index.html">Red Hat OpenStack Platform: Break-fix Practice - Resolving No Route to Host and Destination Host Unreachable for SSH</a>
   </li>
 </ul>
   </li>
@@ -63,6 +63,9 @@
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../chapter1/section2.html">Check your work</a>
   </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../chapter1/section3.html">Break-fix Scenario</a>
+  </li>
 </ul>
   </li>
 </ul>
@@ -74,10 +77,10 @@
     <a class="nav-link" href="index.html">Guided solution</a>
 <ul class="nav-list">
   <li class="nav-item is-current-page" data-depth="2">
-    <a class="nav-link" href="section1.html">Guided solution (page 1 of 2)</a>
+    <a class="nav-link" href="section1.html">Guided solution (page 1)</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="section2.html">Guided solution (page 2 of 2)</a>
+    <a class="nav-link" href="section2.html">Guided solution (page 2)</a>
   </li>
 </ul>
   </li>
@@ -120,7 +123,7 @@
   <ul>
     <li><a href="../index.html">RHOSP instance connectivity Break-Fix 9Resolving 'No Route to Host' and 'Destination Host Unreachable' for SSH</a></li>
     <li><a href="index.html">Guided solution</a></li>
-    <li><a href="section1.html">Guided solution (page 1 of 2)</a></li>
+    <li><a href="section1.html">Guided solution (page 1)</a></li>
   </ul>
 </nav>
 </div>
@@ -129,13 +132,234 @@
   <div class="toc-menu"></div>
 </aside>
 <article class="doc">
-<h1 class="page">Guided solution (page 1 of 2)</h1>
+<h1 class="page">Guided solution (page 1)</h1>
+<div class="sect1">
+<h2 id="_objectives"><a class="anchor" href="#_objectives"></a>Objectives</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Investigate the instance connectivity issue in Red Hat OpenStack Platform.</p>
+</li>
+<li>
+<p>Solve the instance connectivity in the hands-on lab environment.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_outcomes"><a class="anchor" href="#_outcomes"></a>Outcomes</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Investigate why ssh to instance is not working.</p>
+</li>
+<li>
+<p>Fix the ssh to instance failing issue.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_instructions"><a class="anchor" href="#_instructions"></a>Instructions</h2>
+<div class="sectionbody">
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Break the environment if you have not done it and step through the fix.</p>
+<div class="listingblock">
+<div class="content">
+<pre>[student@workstation ~]$ ssh stack@director
+
+[stack@director ~]$ source overcloudrc
+
+(overcloud) [stack@director ~]$ *lab start bfx026
+Running break action against scenario 9
+Run the following command:
+ssh -i /tmp/scenario-9-key.pem cirros@172.25.250.186</pre>
+</div>
+</div>
+</li>
+<li>
+<p>Run the ssh command from the previous lab command output and notice the No route to host error. Also run the ping command against instance IP.</p>
+<div class="listingblock">
+<div class="content">
+<pre>(overcloud) [stack@director ~]$ ssh -i /tmp/scenario-9-key.pem cirros@172.25.250.186
+ssh: connect to host 172.25.250.186 port 22: No route to host
+
+(overcloud) [stack@director ~]$ ping 172.25.250.186 -c 1
+PING 172.25.250.186 (172.25.250.186) 56(84) bytes of data.
+From 172.25.250.11 icmp_seq=1 Destination Host Unreachable
+
+--- 172.25.250.186 ping statistics ---
+1 packets transmitted, 0 received, +1 errors, 100% packet loss, time 0ms</pre>
+</div>
+</div>
 <div class="paragraph">
-<p>FIXME: Provide step-by-step instructions here to resolve the issue.</p>
+<p>You observe that both ssh and ping attempts failed which indicates lack of connectivity.</p>
+</div>
+</li>
+<li>
+<p>Because the ping test failed, it is essential to double-check with ARP. Open run tcpdump on one terminal and open a new terminal and ping the IP of the instance.</p>
+<div class="listingblock">
+<div class="content">
+<pre>(overcloud) [stack@director ~]$ sudo -i
+[root@director ~]# ip neighbour | grep 172.25.250.186
+172.25.250.186 dev eth0 FAILED
+
+[root@director ~]# tcpdump -envvi eth0 | grep 172.25.250.186
+dropped privs to tcpdump
+tcpdump: listening on eth0, link-type EN10MB (Ethernet), snapshot length 262144 bytes
+
+12:48:03.640322 52:54:00:04:fa:0b &gt; Broadcast, ethertype ARP (0x0806), length 42: Ethernet (len 6), IPv4 (len 4), Request who-has 172.25.250.186 tell 172.25.250.11, length 28
+12:48:04.691591 52:54:00:04:fa:0b &gt; Broadcast, ethertype ARP (0x0806), length 42: Ethernet (len 6), IPv4 (len 4), Request who-has 172.25.250.186 tell 172.25.250.11, length 28
+12:48:05.715607 52:54:00:04:fa:0b &gt; Broadcast, ethertype ARP (0x0806), length 42: Ethernet (len 6), IPv4 (len 4), Request who-has 172.25.250.186 tell 172.25.250.11, length 28</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You observe that ARP requests are being sent, but no responses are being received.</p>
+</div>
+</li>
+<li>
+<p>Access the undercloud and check where the VM is running.</p>
+<div class="listingblock">
+<div class="content">
+<pre>(overcloud) [stack@director ~]$ openstack server list --long
++--------------------------------------+---------------+--------+------------+-------------+----------------------------------------------------+---------------------+--------------------------------------+-------------+--------------------------------------+-------------------+-------------------------------------+------------+
+| ID                                   | Name          | Status | Task State | Power State | Networks                                           | Image Name          | Image ID                             | Flavor Name | Flavor ID                            | Availability Zone | Host                                | Properties |
++--------------------------------------+---------------+--------+------------+-------------+----------------------------------------------------+---------------------+--------------------------------------+-------------+--------------------------------------+-------------------+-------------------------------------+------------+
+| 0cc72772-f6d0-4acc-ab2d-5e646de877de | scenario-9-vm | ACTIVE | None       | Running     | scenario-9-network=172.25.250.186, 192.168.190.228 | cirros-0.5.2-x86_64 | 838b3204-ab61-4d72-941b-d6d26ce6dd42 | m1.medium   | 33f33666-40b2-44ef-9d0d-f7a3a3a42413 | nova              | overcloud-novacompute-0.localdomain |            |
++--------------------------------------+---------------+--------+------------+-------------+----------------------------------------------------+---------------------+--------------------------------------+-------------+--------------------------------------+-------------------+-------------------------------------+------------+</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You observe that it is overcloud-compute0.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>The RHOSP cluster is configured to operate with Distributed Virtual Routing (DVR) functionality. As the DVR is enabled, all Floating IPs are treated as DVR, directing traffic directly to the compute node&#8217;s br-ex interface. This arrangement ensures that traffic bound for the floating IP bypasses the control node entirely.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</li>
+<li>
+<p>Identify the network interface used under external bridge br-ex.</p>
+<div class="listingblock">
+<div class="content">
+<pre>(overcloud) [stack@director ~]$ ssh tripleo-admin@overcloud-compute0
+Register this system with Red{nbsp}Hat Insights: insights-client --register
+Create an account or view all your systems at https://red.ht/insights-dashboard
+Last login: Wed Feb 21 17:34:26 2024 from 172.25.249.11
+
+[tripleo-admin@overcloud-novacompute-0 ~]$ sudo -i
+
+[root@overcloud-novacompute-0 ~]# ovs-vsctl show
+...
+    Bridge br-ex
+        fail_mode: standalone
+        Port br-ex
+            Interface br-ex
+                type: internal
+        Port ens4
+            Interface ens4
+...</pre>
+</div>
+</div>
+</li>
+<li>
+<p>Verify the ARP requests on the Ethernet device ens4 used under br-ex.</p>
+<div class="listingblock">
+<div class="content">
+<pre>[root@overcloud-novacompute-0 ~]# tcpdump -envvi ens4 arp
+dropped privs to tcpdump
+tcpdump: listening on ens4, link-type EN10MB (Ethernet), snapshot length 262144 bytes
+17:58:20.174741 52:54:00:04:fa:0b &gt; Broadcast, ethertype ARP (0x0806), length 42: Ethernet (len 6), IPv4 (len 4), Request who-has 172.25.250.186 tell 172.25.250.11, length 28
+17:58:21.203724 52:54:00:04:fa:0b &gt; Broadcast, ethertype ARP (0x0806), length 42: Ethernet (len 6), IPv4 (len 4), Request who-has 172.25.250.186 tell 172.25.250.11, length 28
+17:58:22.227715 52:54:00:04:fa:0b &gt; Broadcast, ethertype ARP (0x0806), length 42: Ethernet (len 6), IPv4 (len 4), Request who-has 172.25.250.186 tell 172.25.250.11, length 28</pre>
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>ARP requests are being sent but not replied.</p>
+</li>
+<li>
+<p>These should be answered by the router gateway port.</p>
+</li>
+<li>
+<p>The next step is to verify the connectivity from the Metadata namespace by attempting to ping the instance with its fixed IP.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>List the floating IP and ensure its alignment with the fixed IP address.</p>
+<div class="listingblock">
+<div class="content">
+<pre>(overcloud) [stack@director ~]$ openstack floating ip list
++--------------------------------------+---------------------+------------------+--------------------------------------+--------------------------------------+----------------------------------+
+| ID                                   | Floating IP Address | Fixed IP Address | Port                                 | Floating Network                     | Project                          |
++--------------------------------------+---------------------+------------------+--------------------------------------+--------------------------------------+----------------------------------+
+| c250bbee-ee31-4732-93d7-b49909a04d44 | 172.25.250.186      | 192.168.190.228  | 389d4b6a-ffa8-46ee-82eb-e6f9ce147672 | fdc2e2cc-0478-4efe-818c-6cb4b41f60ad | 0192bf49efca46bf932847c75117578e |
++--------------------------------------+---------------------+------------------+--------------------------------------+--------------------------------------+----------------------------------+</pre>
+</div>
+</div>
+</li>
+<li>
+<p>Connect to the metadata namespace and ping to instance&#8217;s fixed IP address from there. Run the following command on the compute node.</p>
+<div class="listingblock">
+<div class="content">
+<pre>[root@overcloud-novacompute-0 ~]# ip netns
+ovnmeta-266a1997-33a5-4af8-8a80-fec206094830 (id: 0)
+
+[root@overcloud-novacompute-0 ~]# ip netns exec ovnmeta-266a1997-33a5-4af8-8a80-fec206094830 ping 192.168.190.228 -c 1
+PING 192.168.190.228 (192.168.190.228) 56(84) bytes of data.
+64 bytes from 192.168.190.228: icmp_seq=1 ttl=64 time=1.62 ms
+
+--- 192.168.190.228 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 1.622/1.622/1.622/0.000 ms</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If you get a response, it means that the VM&#8217;s network is functioning correctly locally.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Connectivity works for ICMP from the namespace, which is local to the compute node, but it does not work from the outside. We can try running the OpenFlow protocol trace.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</li>
+<li>
+<p>Install the openvswitch-test packages if not already installed.</p>
+</li>
+</ol>
+</div>
+</div>
 </div>
 <nav class="pagination">
   <span class="prev"><a href="index.html">Guided solution</a></span>
-  <span class="next"><a href="section2.html">Guided solution (page 2 of 2)</a></span>
+  <span class="next"><a href="section2.html">Guided solution (page 2)</a></span>
 </nav>
 </article>
   </div>
