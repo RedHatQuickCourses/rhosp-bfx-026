@@ -1,3 +1,150 @@
-= Guided solution (page 1 of 2)
+= Guided solution (page 1)
 
-FIXME: Provide step-by-step instructions here to resolve the issue.
+== Objectives
+* Investigate the instance connectivity issue in Red Hat OpenStack Platform.
+* Solve the instance connectivity in the hands-on lab environment.
+
+== Outcomes
+* Investigate why ssh to instance is not working.
+* Fix the ssh to instance failing issue.
+
+== Instructions
+
+1. Break the environment if you have not done it and step through the fix.
++
+----
+[student@workstation ~]$ ssh stack@director
+
+[stack@director ~]$ source overcloudrc
+
+(overcloud) [stack@director ~]$ *lab start bfx026
+Running break action against scenario 9
+Run the following command:
+ssh -i /tmp/scenario-9-key.pem cirros@172.25.250.186
+----
+
+2. Run the ssh command from the previous lab command output and notice the No route to host error. Also run the ping command against instance IP.
++
+----
+(overcloud) [stack@director ~]$ ssh -i /tmp/scenario-9-key.pem cirros@172.25.250.186
+ssh: connect to host 172.25.250.186 port 22: No route to host
+
+(overcloud) [stack@director ~]$ ping 172.25.250.186 -c 1
+PING 172.25.250.186 (172.25.250.186) 56(84) bytes of data.
+From 172.25.250.11 icmp_seq=1 Destination Host Unreachable
+
+--- 172.25.250.186 ping statistics ---
+1 packets transmitted, 0 received, +1 errors, 100% packet loss, time 0ms
+----
++
+You observe that both ssh and ping attempts failed which indicates lack of connectivity.
+
+3. Because the ping test failed, it is essential to double-check with ARP. Open run tcpdump on one terminal and open a new terminal and ping the IP of the instance.
++
+----
+(overcloud) [stack@director ~]$ sudo -i
+[root@director ~]# ip neighbour | grep 172.25.250.186
+172.25.250.186 dev eth0 FAILED
+
+[root@director ~]# tcpdump -envvi eth0 | grep 172.25.250.186
+dropped privs to tcpdump
+tcpdump: listening on eth0, link-type EN10MB (Ethernet), snapshot length 262144 bytes
+
+12:48:03.640322 52:54:00:04:fa:0b > Broadcast, ethertype ARP (0x0806), length 42: Ethernet (len 6), IPv4 (len 4), Request who-has 172.25.250.186 tell 172.25.250.11, length 28
+12:48:04.691591 52:54:00:04:fa:0b > Broadcast, ethertype ARP (0x0806), length 42: Ethernet (len 6), IPv4 (len 4), Request who-has 172.25.250.186 tell 172.25.250.11, length 28
+12:48:05.715607 52:54:00:04:fa:0b > Broadcast, ethertype ARP (0x0806), length 42: Ethernet (len 6), IPv4 (len 4), Request who-has 172.25.250.186 tell 172.25.250.11, length 28
+----
++
+You observe that ARP requests are being sent, but no responses are being received.
+
+4. Access the undercloud and check where the VM is running.
++
+----
+(overcloud) [stack@director ~]$ openstack server list --long
++--------------------------------------+---------------+--------+------------+-------------+----------------------------------------------------+---------------------+--------------------------------------+-------------+--------------------------------------+-------------------+-------------------------------------+------------+
+| ID                                   | Name          | Status | Task State | Power State | Networks                                           | Image Name          | Image ID                             | Flavor Name | Flavor ID                            | Availability Zone | Host                                | Properties |
++--------------------------------------+---------------+--------+------------+-------------+----------------------------------------------------+---------------------+--------------------------------------+-------------+--------------------------------------+-------------------+-------------------------------------+------------+
+| 0cc72772-f6d0-4acc-ab2d-5e646de877de | scenario-9-vm | ACTIVE | None       | Running     | scenario-9-network=172.25.250.186, 192.168.190.228 | cirros-0.5.2-x86_64 | 838b3204-ab61-4d72-941b-d6d26ce6dd42 | m1.medium   | 33f33666-40b2-44ef-9d0d-f7a3a3a42413 | nova              | overcloud-novacompute-0.localdomain |            |
++--------------------------------------+---------------+--------+------------+-------------+----------------------------------------------------+---------------------+--------------------------------------+-------------+--------------------------------------+-------------------+-------------------------------------+------------+
+----
++
+You observe that it is overcloud-compute0.
++
+[NOTE]
+====
+The RHOSP cluster is configured to operate with Distributed Virtual Routing (DVR) functionality. As the DVR is enabled, all Floating IPs are treated as DVR, directing traffic directly to the compute node's br-ex interface. This arrangement ensures that traffic bound for the floating IP bypasses the control node entirely.
+====
+
+5. Identify the network interface used under external bridge br-ex.
++
+----
+(overcloud) [stack@director ~]$ ssh tripleo-admin@overcloud-compute0
+Register this system with Red{nbsp}Hat Insights: insights-client --register
+Create an account or view all your systems at https://red.ht/insights-dashboard
+Last login: Wed Feb 21 17:34:26 2024 from 172.25.249.11
+
+[tripleo-admin@overcloud-novacompute-0 ~]$ sudo -i
+
+[root@overcloud-novacompute-0 ~]# ovs-vsctl show
+...
+    Bridge br-ex
+        fail_mode: standalone
+        Port br-ex
+            Interface br-ex
+                type: internal
+        Port ens4
+            Interface ens4
+...
+----
+
+6. Verify the ARP requests on the Ethernet device ens4 used under br-ex.
++
+----
+[root@overcloud-novacompute-0 ~]# tcpdump -envvi ens4 arp
+dropped privs to tcpdump
+tcpdump: listening on ens4, link-type EN10MB (Ethernet), snapshot length 262144 bytes
+17:58:20.174741 52:54:00:04:fa:0b > Broadcast, ethertype ARP (0x0806), length 42: Ethernet (len 6), IPv4 (len 4), Request who-has 172.25.250.186 tell 172.25.250.11, length 28
+17:58:21.203724 52:54:00:04:fa:0b > Broadcast, ethertype ARP (0x0806), length 42: Ethernet (len 6), IPv4 (len 4), Request who-has 172.25.250.186 tell 172.25.250.11, length 28
+17:58:22.227715 52:54:00:04:fa:0b > Broadcast, ethertype ARP (0x0806), length 42: Ethernet (len 6), IPv4 (len 4), Request who-has 172.25.250.186 tell 172.25.250.11, length 28
+----
++
+- ARP requests are being sent but not replied.
+
+- These should be answered by the router gateway port.
+
+- The next step is to verify the connectivity from the Metadata namespace by attempting to ping the instance with its fixed IP.
+
+7. List the floating IP and ensure its alignment with the fixed IP address.
++
+----
+(overcloud) [stack@director ~]$ openstack floating ip list
++--------------------------------------+---------------------+------------------+--------------------------------------+--------------------------------------+----------------------------------+
+| ID                                   | Floating IP Address | Fixed IP Address | Port                                 | Floating Network                     | Project                          |
++--------------------------------------+---------------------+------------------+--------------------------------------+--------------------------------------+----------------------------------+
+| c250bbee-ee31-4732-93d7-b49909a04d44 | 172.25.250.186      | 192.168.190.228  | 389d4b6a-ffa8-46ee-82eb-e6f9ce147672 | fdc2e2cc-0478-4efe-818c-6cb4b41f60ad | 0192bf49efca46bf932847c75117578e |
++--------------------------------------+---------------------+------------------+--------------------------------------+--------------------------------------+----------------------------------+
+----
+
+8. Connect to the metadata namespace and ping to instance's fixed IP address from there. Run the following command on the compute node.
++
+----
+[root@overcloud-novacompute-0 ~]# ip netns
+ovnmeta-266a1997-33a5-4af8-8a80-fec206094830 (id: 0)
+
+[root@overcloud-novacompute-0 ~]# ip netns exec ovnmeta-266a1997-33a5-4af8-8a80-fec206094830 ping 192.168.190.228 -c 1
+PING 192.168.190.228 (192.168.190.228) 56(84) bytes of data.
+64 bytes from 192.168.190.228: icmp_seq=1 ttl=64 time=1.62 ms
+
+--- 192.168.190.228 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 1.622/1.622/1.622/0.000 ms
+----
++
+If you get a response, it means that the VM's network is functioning correctly locally.
++
+[NOTE]
+====
+Connectivity works for ICMP from the namespace, which is local to the compute node, but it does not work from the outside. We can try running the OpenFlow protocol trace.
+====
+
+9. Install the openvswitch-test packages if not already installed.
