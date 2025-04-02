@@ -15,9 +15,8 @@ Your team manages a Red Hat OpenStack Platform (RHOSP) infrastructure used by an
 
 They noticed the following error:
 
-----
-(overcloud) [stack@director ~]$ ssh -i /tmp/scenario-bfx026-key.pem cirros@172.25.252.254
-ssh: connect to host 172.25.252.254 port 22: No route to host
+[student@workstation ~]$ ssh -i /tmp/scenario-bfx026-key.pem cirros@192.168.51.165
+ssh: connect to host 192.168.51.165 port 22: Connection timed out
 ----
 
 In the preceding output, ip address can differ in your lab environemnt.
@@ -26,14 +25,17 @@ In the preceding output, ip address can differ in your lab environemnt.
 
 * Recreate this scenario by running the lab script on director VM as stack user:
 ----
-[student@workstation ~]$ ssh stack@director
+[student@workstation ~]$ oc login -u admin -p redhatocp https://api.ocp4.example.com:6443
+Login successful.
 
-[stack@director ~]$ source overcloudrc
+You have access to 76 projects, the list has been suppressed. You can list all projects with 'oc projects'
 
-(overcloud) [stack@director ~]$ lab start bfx026
+Using project "openstack".
+
+[student@workstation ~]$ lab start bfx026
 Running start action against scenario bfx026
 Run the following command:
-ssh -i /tmp/scenario-bfx026-key.pem cirros@172.25.252.254
+ssh -i /tmp/scenario-bfx026-key.pem cirros@192.168.51.165
 ----
 
 In the preceding output, ip address can differ in your lab environemnt.
@@ -43,6 +45,6 @@ In the preceding output, ip address can differ in your lab environemnt.
 * To ensure scenario is recreated, run the ssh command from the previous output:
 +
 ----
-(overcloud) [stack@director ~]$ ssh -i /tmp/scenario-bfx026-key.pem cirros@172.25.252.254
-ssh: connect to host 172.25.252.254 port 22: Connection timed out
+[student@workstation ~]$ ssh -i /tmp/scenario-bfx026-key.pem cirros@192.168.51.165
+ssh: connect to host 192.168.51.165 port 22: Connection timed out
 ----
