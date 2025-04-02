@@ -138,9 +138,9 @@
 <div class="sectionbody">
 <div class="listingblock">
 <div class="content">
-<pre>[stack@director ~]$ lab grade bfx026
+<pre>[student@workstation ~]$ lab grade bfx026
 Running grade action against scenario bfx026
-cirros@172.25.252.254's password:
+cirros@192.168.51.165's password:
 Grading scenario bfx026: PASSED!</pre>
 </div>
 </div>
@@ -171,9 +171,10 @@ Grading scenario bfx026: PASSED!</pre>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre>(overcloud) [stack@director ~]$ ssh -i /tmp/scenario-bfx026-key.pem cirros@172.25.252.254
+<pre>(overcloud) [stack@director ~]$ ssh -i /tmp/scenario-bfx026-key.pem cirros@192.168.51.165
+[student@workstation ~]$ ssh -i /tmp/scenario-bfc026-key.pem cirros@192.168.51.165
 sign_and_send_pubkey: no mutual signature supported
-cirros@172.25.252.254's password:
+cirros@192.168.51.165's password:
 $</pre>
 </div>
 </div>

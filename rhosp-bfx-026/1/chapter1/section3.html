@@ -133,8 +133,6 @@
 </aside>
 <article class="doc">
 <h1 class="page">Break-fix Scenario</h1>
-<div id="preamble">
-<div class="sectionbody">
 <div class="paragraph">
 <p>Objectives:</p>
 </div>
@@ -161,58 +159,52 @@ Your team manages a Red Hat OpenStack Platform (RHOSP) infrastructure used by an
 <div class="paragraph">
 <p>They noticed the following error:</p>
 </div>
+<div class="paragraph">
+<p>[student@workstation ~]$ ssh -i /tmp/scenario-bfx026-key.pem cirros@192.168.51.165
+ssh: connect to host 192.168.51.165 port 22: Connection timed out</p>
+</div>
 <div class="listingblock">
 <div class="content">
-<pre>(overcloud) [stack@director ~]$ ssh -i /tmp/scenario-bfx026-key.pem cirros@172.25.252.254
-ssh: connect to host 172.25.252.254 port 22: No route to host</pre>
+<pre>In the preceding output, ip address can differ in your lab environemnt.
+
+== Recreate scenario
+
+* Recreate this scenario by running the lab script on director VM as stack user:</pre>
 </div>
 </div>
 <div class="paragraph">
-<p>In the preceding output, ip address can differ in your lab environemnt.</p>
+<p>[student@workstation ~]$ oc login -u admin -p redhatocp <a href="https://api.ocp4.example.com:6443" class="bare">https://api.ocp4.example.com:6443</a>
+Login successful.</p>
 </div>
+<div class="paragraph">
+<p>You have access to 76 projects, the list has been suppressed. You can list all projects with 'oc projects'</p>
 </div>
+<div class="paragraph">
+<p>Using project "openstack".</p>
 </div>
-<div class="sect1">
-<h2 id="_recreate_scenario"><a class="anchor" href="#_recreate_scenario"></a>Recreate scenario</h2>
-<div class="sectionbody">
-<div class="ulist">
-<ul>
-<li>
-<p>Recreate this scenario by running the lab script on director VM as stack user:</p>
-</li>
-</ul>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre>[student@workstation ~]$ ssh stack@director
-
-[stack@director ~]$ source overcloudrc
-
-(overcloud) [stack@director ~]$ lab start bfx026
+<div class="paragraph">
+<p>[student@workstation ~]$ lab start bfx026
 Running start action against scenario bfx026
 Run the following command:
-ssh -i /tmp/scenario-bfx026-key.pem cirros@172.25.252.254</pre>
+ssh -i /tmp/scenario-bfx026-key.pem cirros@192.168.51.165</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>In the preceding output, ip address can differ in your lab environemnt.
+
+* This breaks the connectivity to instance.
+
+* To ensure scenario is recreated, run the ssh command from the previous output:
++</pre>
 </div>
 </div>
 <div class="paragraph">
-<p>In the preceding output, ip address can differ in your lab environemnt.</p>
+<p>[student@workstation ~]$ ssh -i /tmp/scenario-bfx026-key.pem cirros@192.168.51.165
+ssh: connect to host 192.168.51.165 port 22: Connection timed out</p>
 </div>
-<div class="ulist">
-<ul>
-<li>
-<p>This breaks the connectivity to instance.</p>
-</li>
-<li>
-<p>To ensure scenario is recreated, run the ssh command from the previous output:</p>
 <div class="listingblock">
 <div class="content">
-<pre>(overcloud) [stack@director ~]$ ssh -i /tmp/scenario-bfx026-key.pem cirros@172.25.252.254
-ssh: connect to host 172.25.252.254 port 22: Connection timed out</pre>
-</div>
-</div>
-</li>
-</ul>
-</div>
+<pre></pre>
 </div>
 </div>
 <nav class="pagination">

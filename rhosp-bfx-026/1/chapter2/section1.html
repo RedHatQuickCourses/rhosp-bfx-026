@@ -172,14 +172,10 @@
 <p>Break the environment if you have not done it and step through the fix.</p>
 <div class="listingblock">
 <div class="content">
-<pre>[student@workstation ~]$ ssh stack@director
-
-[stack@director ~]$ source overcloudrc
-
-(overcloud) [stack@director ~]$ *lab start bfx026
-Running break action against scenario 9
+<pre>[student@workstation ~]$ lab start bfx026
+Running break action against scenario bfx026
 Run the following command:
-ssh -i /tmp/scenario-9-key.pem cirros@172.25.250.186</pre>
+ssh -i /tmp/scenario-bfx026-key.pem cirros@192.168.51.165</pre>
 </div>
 </div>
 </li>
@@ -187,14 +183,14 @@ ssh -i /tmp/scenario-9-key.pem cirros@172.25.250.186</pre>
 <p>Run the ssh command from the previous lab command output and notice the No route to host error. Also run the ping command against instance IP.</p>
 <div class="listingblock">
 <div class="content">
-<pre>(overcloud) [stack@director ~]$ ssh -i /tmp/scenario-9-key.pem cirros@172.25.250.186
-ssh: connect to host 172.25.250.186 port 22: No route to host
+<pre>[student@workstation ~]$ ssh -i /tmp/scenario-bfx026-key.pem cirros@192.168.51.165
+ssh: connect to host 192.168.51.165 port 22: No route to host
 
-(overcloud) [stack@director ~]$ ping 172.25.250.186 -c 1
-PING 172.25.250.186 (172.25.250.186) 56(84) bytes of data.
-From 172.25.250.11 icmp_seq=1 Destination Host Unreachable
+[student@workstation ~]$ ping 192.168.51.165 -c 1
+PING 192.168.51.165 (192.168.51.165) 56(84) bytes of data.
+From 172.25.250.253 icmp_seq=1 Destination Host Unreachable
 
---- 172.25.250.186 ping statistics ---
+--- 192.168.51.165 ping statistics ---
 1 packets transmitted, 0 received, +1 errors, 100% packet loss, time 0ms</pre>
 </div>
 </div>
@@ -204,39 +200,50 @@ From 172.25.250.11 icmp_seq=1 Destination Host Unreachable
 </li>
 <li>
 <p>Because the ping test failed, it is essential to double-check with ARP. Open run tcpdump on one terminal and open a new terminal and ping the IP of the instance.</p>
-<div class="listingblock">
-<div class="content">
-<pre>(overcloud) [stack@director ~]$ sudo -i
-[root@director ~]# ip neighbour | grep 172.25.250.186
-172.25.250.186 dev eth0 FAILED
-
-[root@director ~]# tcpdump -envvi eth0 | grep 172.25.250.186
-dropped privs to tcpdump
-tcpdump: listening on eth0, link-type EN10MB (Ethernet), snapshot length 262144 bytes
-
-12:48:03.640322 52:54:00:04:fa:0b &gt; Broadcast, ethertype ARP (0x0806), length 42: Ethernet (len 6), IPv4 (len 4), Request who-has 172.25.250.186 tell 172.25.250.11, length 28
-12:48:04.691591 52:54:00:04:fa:0b &gt; Broadcast, ethertype ARP (0x0806), length 42: Ethernet (len 6), IPv4 (len 4), Request who-has 172.25.250.186 tell 172.25.250.11, length 28
-12:48:05.715607 52:54:00:04:fa:0b &gt; Broadcast, ethertype ARP (0x0806), length 42: Ethernet (len 6), IPv4 (len 4), Request who-has 172.25.250.186 tell 172.25.250.11, length 28</pre>
-</div>
-</div>
 <div class="paragraph">
-<p>You observe that ARP requests are being sent, but no responses are being received.</p>
+<p>Due to the fact that only the <code>utility</code> server has L2 access to the OSP External Network, you have to check ARP on that server.</p>
 </div>
 </li>
-<li>
-<p>Access the undercloud and check where the VM is running.</p>
+</ol>
+</div>
 <div class="listingblock">
 <div class="content">
-<pre>(overcloud) [stack@director ~]$ openstack server list --long
-+--------------------------------------+---------------+--------+------------+-------------+----------------------------------------------------+---------------------+--------------------------------------+-------------+--------------------------------------+-------------------+-------------------------------------+------------+
-| ID                                   | Name          | Status | Task State | Power State | Networks                                           | Image Name          | Image ID                             | Flavor Name | Flavor ID                            | Availability Zone | Host                                | Properties |
-+--------------------------------------+---------------+--------+------------+-------------+----------------------------------------------------+---------------------+--------------------------------------+-------------+--------------------------------------+-------------------+-------------------------------------+------------+
-| 0cc72772-f6d0-4acc-ab2d-5e646de877de | scenario-9-vm | ACTIVE | None       | Running     | scenario-9-network=172.25.250.186, 192.168.190.228 | cirros-0.5.2-x86_64 | 838b3204-ab61-4d72-941b-d6d26ce6dd42 | m1.medium   | 33f33666-40b2-44ef-9d0d-f7a3a3a42413 | nova              | overcloud-novacompute-0.localdomain |            |
-+--------------------------------------+---------------+--------+------------+-------------+----------------------------------------------------+---------------------+--------------------------------------+-------------+--------------------------------------+-------------------+-------------------------------------+------------+</pre>
+<pre>[student@workstation ~]$ ssh lab@utility
+Register this system with Red Hat Insights: insights-client --register
+Create an account or view all your systems at https://red.ht/insights-dashboard
+Last login: Mon Mar 31 06:27:54 2025 from 172.25.250.9
+[lab@utility ~]$ sudo -i
+[root@utility ~]# ip neighbour | grep 192.168.51.165
+192.168.51.165 dev eth2 FAILED
+
+[root@utility ~]# tcpdump -envvi eth2 | grep 192.168.51.165
+dropped privs to tcpdump
+tcpdump: listening on eth2, link-type EN10MB (Ethernet), snapshot length 262144 bytes
+06:16:50.625686 52:54:00:02:33:fe &gt; Broadcast, ethertype ARP (0x0806), length 42: Ethernet (len 6), IPv4 (len 4), Request who-has 192.168.51.165 tell 192.168.51.254, length 28
+06:16:51.656605 52:54:00:02:33:fe &gt; Broadcast, ethertype ARP (0x0806), length 42: Ethernet (len 6), IPv4 (len 4), Request who-has 192.168.51.165 tell 192.168.51.254, length 28
+06:16:52.680579 52:54:00:02:33:fe &gt; Broadcast, ethertype ARP (0x0806), length 42: Ethernet (len 6), IPv4 (len 4), Request who-has 192.168.51.165 tell 192.168.51.254, length 28</pre>
 </div>
 </div>
 <div class="paragraph">
-<p>You observe that it is overcloud-compute0.</p>
+<p>+
+You observe that ARP requests are being sent, but no responses are being received.</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Use openstackclient POD and check where the VM is running.</p>
+<div class="listingblock">
+<div class="content">
+<pre>[student@workstation ~]$ oc exec -n openstack openstackclient -- openstack server list --long
++--------------------------------------+--------------------+--------+------------+-------------+---------------------------------------------------------+---------------------+--------------------------------------+----------+-------------------+---------------------------+------------+-------------+
+| ID                                   | Name               | Status | Task State | Power State | Networks                                                | Image Name          | Image ID                             | Flavor   | Availability Zone | Host                      | Properties | Host Status |
++--------------------------------------+--------------------+--------+------------+-------------+---------------------------------------------------------+---------------------+--------------------------------------+----------+-------------------+---------------------------+------------+-------------+
+| 410602ae-a400-4358-9723-312c493e409f | scenario-bfx026-vm | ACTIVE | None       | Running     | scenario-bfx026-network=192.168.190.187, 192.168.51.165 | cirros-0.5.2-x86_64 | 10210206-c30a-4765-8547-0dad335b5675 | m1.small | nova              | compute01.srv.example.com |            | UP          |
++--------------------------------------+--------------------+--------+------------+-------------+---------------------------------------------------------+---------------------+--------------------------------------+----------+-------------------+---------------------------+------------+-------------+</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You observe that it is compute01.srv.example.com.</p>
 </div>
 <div class="admonitionblock note">
 <table>
@@ -257,22 +264,22 @@ tcpdump: listening on eth0, link-type EN10MB (Ethernet), snapshot length 262144 
 <p>Identify the network interface used under external bridge br-ex.</p>
 <div class="listingblock">
 <div class="content">
-<pre>(overcloud) [stack@director ~]$ ssh tripleo-admin@overcloud-compute0
-Register this system with Red{nbsp}Hat Insights: insights-client --register
+<pre>[student@workstation ~]$ ssh root@compute01.srv.example.com
+Activate the web console with: systemctl enable --now cockpit.socket
+
+Register this system with Red Hat Insights: insights-client --register
 Create an account or view all your systems at https://red.ht/insights-dashboard
-Last login: Wed Feb 21 17:34:26 2024 from 172.25.249.11
+Last login: Wed Apr  2 09:58:41 2025 from 192.168.51.254
 
-[tripleo-admin@overcloud-novacompute-0 ~]$ sudo -i
-
-[root@overcloud-novacompute-0 ~]# ovs-vsctl show
+[root@compute01 ~]# ovs-vsctl show
 ...
     Bridge br-ex
         fail_mode: standalone
         Port br-ex
             Interface br-ex
                 type: internal
-        Port ens4
-            Interface ens4
+        Port eth2
+            Interface eth2
 ...</pre>
 </div>
 </div>
@@ -281,12 +288,16 @@ Last login: Wed Feb 21 17:34:26 2024 from 172.25.249.11
 <p>Verify the ARP requests on the Ethernet device ens4 used under br-ex.</p>
 <div class="listingblock">
 <div class="content">
-<pre>[root@overcloud-novacompute-0 ~]# tcpdump -envvi ens4 arp
+<pre>[root@compute01 ~]# tcpdump -envvi eth2 arp
 dropped privs to tcpdump
-tcpdump: listening on ens4, link-type EN10MB (Ethernet), snapshot length 262144 bytes
-17:58:20.174741 52:54:00:04:fa:0b &gt; Broadcast, ethertype ARP (0x0806), length 42: Ethernet (len 6), IPv4 (len 4), Request who-has 172.25.250.186 tell 172.25.250.11, length 28
-17:58:21.203724 52:54:00:04:fa:0b &gt; Broadcast, ethertype ARP (0x0806), length 42: Ethernet (len 6), IPv4 (len 4), Request who-has 172.25.250.186 tell 172.25.250.11, length 28
-17:58:22.227715 52:54:00:04:fa:0b &gt; Broadcast, ethertype ARP (0x0806), length 42: Ethernet (len 6), IPv4 (len 4), Request who-has 172.25.250.186 tell 172.25.250.11, length 28</pre>
+tcpdump: listening on eth2, link-type EN10MB (Ethernet), snapshot length 262144 bytes
+10:32:30.176581 52:54:00:02:33:fe &gt; Broadcast, ethertype ARP (0x0806), length 42: Ethernet (len 6), IPv4 (len 4), Request who-has 192.168.51.165 tell 192.168.51.254, length 28
+10:32:31.176926 52:54:00:02:33:fe &gt; Broadcast, ethertype ARP (0x0806), length 42: Ethernet (len 6), IPv4 (len 4), Request who-has 192.168.51.165 tell 192.168.51.254, length 28
+10:32:32.200834 52:54:00:02:33:fe &gt; Broadcast, ethertype ARP (0x0806), length 42: Ethernet (len 6), IPv4 (len 4), Request who-has 192.168.51.165 tell 192.168.51.254, length 28
+^C
+3 packets captured
+3 packets received by filter
+0 packets dropped by kernel</pre>
 </div>
 </div>
 <div class="ulist">
@@ -307,11 +318,11 @@ tcpdump: listening on ens4, link-type EN10MB (Ethernet), snapshot length 262144 
 <p>List the floating IP and ensure its alignment with the fixed IP address.</p>
 <div class="listingblock">
 <div class="content">
-<pre>(overcloud) [stack@director ~]$ openstack floating ip list
+<pre>[student@workstation ~]$ oc exec -n openstack openstackclient -- openstack floating ip list
 +--------------------------------------+---------------------+------------------+--------------------------------------+--------------------------------------+----------------------------------+
 | ID                                   | Floating IP Address | Fixed IP Address | Port                                 | Floating Network                     | Project                          |
 +--------------------------------------+---------------------+------------------+--------------------------------------+--------------------------------------+----------------------------------+
-| c250bbee-ee31-4732-93d7-b49909a04d44 | 172.25.250.186      | 192.168.190.228  | 389d4b6a-ffa8-46ee-82eb-e6f9ce147672 | fdc2e2cc-0478-4efe-818c-6cb4b41f60ad | 0192bf49efca46bf932847c75117578e |
+| 5a1eb6f3-d643-4169-8deb-e6b2042d9c19 | 192.168.51.165      | 192.168.190.187  | 3abe5cf3-3d40-4c02-af97-59946cfd3951 | ee961465-e812-4563-aaa8-05adb3476889 | 7ac1618d984947c0bfcbf713a94fed4a |
 +--------------------------------------+---------------------+------------------+--------------------------------------+--------------------------------------+----------------------------------+</pre>
 </div>
 </div>
@@ -320,16 +331,16 @@ tcpdump: listening on ens4, link-type EN10MB (Ethernet), snapshot length 262144 
 <p>Connect to the metadata namespace and ping to instance&#8217;s fixed IP address from there. Run the following command on the compute node.</p>
 <div class="listingblock">
 <div class="content">
-<pre>[root@overcloud-novacompute-0 ~]# ip netns
-ovnmeta-266a1997-33a5-4af8-8a80-fec206094830 (id: 0)
+<pre>[root@compute01 ~]# ip netns
+ovnmeta-1655a6ba-a91e-4d79-9e2f-ba6d44807c2a (id: 0)
 
-[root@overcloud-novacompute-0 ~]# ip netns exec ovnmeta-266a1997-33a5-4af8-8a80-fec206094830 ping 192.168.190.228 -c 1
-PING 192.168.190.228 (192.168.190.228) 56(84) bytes of data.
-64 bytes from 192.168.190.228: icmp_seq=1 ttl=64 time=1.62 ms
+[root@compute01 ~]# ip netns exec ovnmeta-1655a6ba-a91e-4d79-9e2f-ba6d44807c2a ping 192.168.190.187 -c 1
+PING 192.168.190.187 (192.168.190.187) 56(84) bytes of data.
+64 bytes from 192.168.190.187: icmp_seq=1 ttl=64 time=1.43 ms
 
---- 192.168.190.228 ping statistics ---
+--- 192.168.190.187 ping statistics ---
 1 packets transmitted, 1 received, 0% packet loss, time 0ms
-rtt min/avg/max/mdev = 1.622/1.622/1.622/0.000 ms</pre>
+rtt min/avg/max/mdev = 1.425/1.425/1.425/0.000 ms</pre>
 </div>
 </div>
 <div class="paragraph">
