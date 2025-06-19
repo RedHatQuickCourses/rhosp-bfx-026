@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Guided solution (page 2) :: RHOSP Networking Break-Fix Practice - Resolving &#x27;No Route to Host&#x27; and &#x27;Destination Host Unreachable&#x27; for SSH</title>
     <link rel="prev" href="section1.html">
-    <link rel="next" href="../appendix/appendix.html">
+    <link rel="next" href="section3.html">
     <meta name="generator" content="Antora 3.1.3">
     <link rel="stylesheet" href="../../../_/css/site.css">
     <script>var uiRootPath = '../../../_'</script>
@@ -40,7 +40,7 @@
   <li class="nav-item" data-depth="0">
 <ul class="nav-list">
   <li class="nav-item" data-depth="1">
-    <a class="nav-link" href="../index.html">Red Hat OpenStack Platform: Break-fix Practice - Resolving No Route to Host and Destination Host Unreachable for SSH</a>
+    <a class="nav-link" href="../index.html">Red Hat OpenStack Platform: Break-fix Practice - 1</a>
   </li>
 </ul>
   </li>
@@ -81,6 +81,9 @@
   </li>
   <li class="nav-item is-current-page" data-depth="2">
     <a class="nav-link" href="section2.html">Guided solution (page 2)</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="section3.html">Evalution</a>
   </li>
 </ul>
   </li>
@@ -133,13 +136,17 @@
 </aside>
 <article class="doc">
 <h1 class="page">Guided solution (page 2)</h1>
-<div id="preamble">
-<div class="sectionbody">
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p>Capture ARP request packets using tcpdump.</p>
+<p>Capture ARP request packets using <strong>tcpdump</strong> on <strong>compute</strong> node.</p>
 <div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">tcpdump -i eth2 arp -c1 -w arp-request.pcap</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Sample output</div>
 <div class="content">
 <pre>[root@compute01 ~]# tcpdump -i eth2 arp -c1 -w arp-request.pcap
 dropped privs to tcpdump
@@ -150,23 +157,36 @@ tcpdump: listening on eth2, link-type EN10MB (Ethernet), capture size 262144 byt
 </div>
 </div>
 <div class="paragraph">
-<p>Before running the above command, ensure to ping the floating IP from another terminal to generate the necessary packets.</p>
+<p>Before running the above command, ensure to <strong>ping the floating IP</strong> from another terminal <strong>from workstation vm</strong> to generate the necessary packets.</p>
 </div>
 </li>
 <li>
 <p>Check if the captured packets are ARP requests for the floating IP.</p>
 <div class="listingblock">
 <div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">tcpdump -r arp-request.pcap</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Sample output</div>
+<div class="content">
 <pre>[root@compute01 ~]# tcpdump -r arp-request.pcap
 reading from file arp-request.pcap, link-type EN10MB (Ethernet), snapshot length 262144
 dropped privs to tcpdump
-10:35:47.429743 ARP, Request who-has 192.168.51.165 tell _gateway, length 28</pre>
+06:12:38.696143 ARP, Request who-has 192.168.51.98 tell _gateway, length 28
+[root@compute01 ~]#</pre>
 </div>
 </div>
 </li>
 <li>
-<p>Identify the OpenFlow protocol number for network interface ens3.</p>
+<p>Run below command on the <strong>compute</strong> node to identify the OpenFlow protocol number for network interface eth2.</p>
 <div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">ovs-ofctl show br-ex</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Sample output</div>
 <div class="content">
 <pre>[root@compute01 ~]# ovs-ofctl show br-ex
 OFPT_FEATURES_REPLY (xid=0x2): dpid:000052540002331f
@@ -181,7 +201,8 @@ actions: output enqueue set_vlan_vid set_vlan_pcp strip_vlan mod_dl_src mod_dl_d
      config:     0
      state:      0
      speed: 0 Mbps now, 0 Mbps max
-OFPT_GET_CONFIG_REPLY (xid=0x4): frags=normal miss_send_len=0</pre>
+OFPT_GET_CONFIG_REPLY (xid=0x4): frags=normal miss_send_len=0
+[root@compute01 ~]#</pre>
 </div>
 </div>
 <div class="admonitionblock note">
@@ -200,10 +221,37 @@ OFPT_GET_CONFIG_REPLY (xid=0x4): frags=normal miss_send_len=0</pre>
 </div>
 </li>
 <li>
-<p>Perform the OpenFlow protocol trace on br-ex with in_port set to 1.</p>
+<p>On the <strong>compute</strong> node, perform the OpenFlow protocol trace on <strong>br-ex</strong> with in_port set to 1.</p>
 <div class="listingblock">
 <div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">ovs-appctl ofproto/trace br-ex in_port=1 $(ovs-pcap arp-request.pcap)</code></pre>
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>ovs-pcap</strong> command is provided by <strong>openvswitch-test</strong> package.</p>
+</li>
+<li>
+<p>openvswitch-test package is available form the <strong>fast-datapath-for-rhel-9-x86_64-rpms</strong> channel.</p>
+</li>
+<li>
+<p>Subscribe the compute node and enable fast-datapath-for-rhel-9-x86_64-rpms channel.</p>
+</li>
+<li>
+<p>Install <strong>openvswitch3.3-test-3.3.0-49.el9fdp.noarch</strong> package.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">subscription-manager register
+subscription-manager repos --enable=fast-datapath-for-rhel-9-x86_64-rpms
+dnf install openvswitch3.3-test-3.3.0-49.el9fdp.noarch</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Sample output</div>
+<div class="content">
 <pre>[root@compute01 ~]# ovs-appctl ofproto/trace br-ex in_port=1 $(ovs-pcap arp-request.pcap)
+-bash: ovs-pcap: command not found
 Flow: in_port=1,vlan_tci=0x0000,dl_src=00:00:00:00:00:00,dl_dst=00:00:00:00:00:00,dl_type=0x0000
 
 bridge("br-ex")
@@ -214,20 +262,24 @@ bridge("br-ex")
 
 Final flow: unchanged
 Megaflow: recirc_id=0,eth,in_port=1,dl_src=00:00:00:00:00:00,dl_dst=00:00:00:00:00:00,dl_type=0x0000
-Datapath actions: 3</pre>
+Datapath actions: 3
+[root@compute01 ~]#</pre>
 </div>
 </div>
 </li>
+</ul>
+</div>
+</li>
 <li>
-<p>Analyze the trace output. In this case, the trace shows that the ARP request is flooding, and "Datapath actions: 3" indicates that it was delivered to br-ex (see output of below command).</p>
+<p>The trace shows that the ARP request is flooding, and "Datapath actions: 3" indicates that it was delivered to br-ex (see output of below command).</p>
 <div class="listingblock">
 <div class="content">
 <pre>[root@compute01 ~]# ovs-dpctl show
 system@ovs-system:
-  lookups: hit:28425 missed:2050 lost:0
-  flows: 10
-  masks: hit:46507 total:4 hit/pkt:1.53
-  cache: hit:20808 hit-rate:68.28%
+  lookups: hit:5562620 missed:182693 lost:0
+  flows: 27
+  masks: hit:11191975 total:5 hit/pkt:1.95
+  cache: hit:2462172 hit-rate:42.86%
   caches:
     masks-cache: size:256
   port 0: ovs-system (internal)
@@ -240,8 +292,9 @@ system@ovs-system:
   port 7: vlan20 (internal)
   port 8: vlan21 (internal)
   port 9: vlan22 (internal)
-  port 10: tap3abe5cf3-3d
-  port 11: tap1655a6ba-a0</pre>
+  port 10: tapd2db5833-99
+  port 11: tap96cd71b0-20
+[root@compute01 ~]#</pre>
 </div>
 </div>
 <div class="admonitionblock note">
@@ -252,7 +305,7 @@ system@ovs-system:
 </td>
 <td class="content">
 <div class="paragraph">
-<p>"Data path 3" means the traffic was delivered to br-ex, which is a port on the br-ex bridge.</p>
+<p>"Data path 3" means the traffic was delivered to br-ex, which is a port 3 on the br-ex bridge.</p>
 </div>
 </td>
 </tr>
@@ -260,15 +313,21 @@ system@ovs-system:
 </div>
 </li>
 <li>
-<p>Run tcpdump on br-ex.</p>
+<p>Run tcpdump on br-exon the <strong>compute</strong> node.</p>
 <div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">tcpdump -envvi br-ex arp</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Sample output</div>
 <div class="content">
 <pre>[root@compute01 ~]# tcpdump -envvi br-ex arp
 dropped privs to tcpdump
 tcpdump: listening on br-ex, link-type EN10MB (Ethernet), snapshot length 262144 bytes
-10:39:33.611718 52:54:00:02:33:fe &gt; Broadcast, ethertype ARP (0x0806), length 42: Ethernet (len 6), IPv4 (len 4), Request who-has 192.168.51.165 tell 192.168.51.254, length 28
-10:39:34.664540 52:54:00:02:33:fe &gt; Broadcast, ethertype ARP (0x0806), length 42: Ethernet (len 6), IPv4 (len 4), Request who-has 192.168.51.165 tell 192.168.51.254, length 28
-10:39:35.688557 52:54:00:02:33:fe &gt; Broadcast, ethertype ARP (0x0806), length 42: Ethernet (len 6), IPv4 (len 4), Request who-has 192.168.51.165 tell 192.168.51.254, length 28</pre>
+08:12:19.474463 52:54:00:02:33:fe &gt; Broadcast, ethertype ARP (0x0806), length 42: Ethernet (len 6), IPv4 (len 4), Request who-has 192.168.51.98 tell 192.168.51.254, length 28
+08:12:20.521301 52:54:00:02:33:fe &gt; Broadcast, ethertype ARP (0x0806), length 42: Ethernet (len 6), IPv4 (len 4), Request who-has 192.168.51.98 tell 192.168.51.254, length 28
+08:12:21.545346 52:54:00:02:33:fe &gt; Broadcast, ethertype ARP (0x0806), length 42: Ethernet (len 6), IPv4 (len 4), Request who-has 192.168.51.98 tell 192.168.51.254, length 28</pre>
 </div>
 </div>
 <div class="ulist">
@@ -299,12 +358,11 @@ tcpdump: listening on br-ex, link-type EN10MB (Ethernet), snapshot length 262144
 . . .
     Bridge br-ex
         fail_mode: standalone
-        Port eth2
-            Interface eth2
         Port br-ex
             Interface br-ex
                 type: internal
-
+        Port eth2
+            Interface eth2
 . . .</pre>
 </div>
 </div>
@@ -313,28 +371,35 @@ tcpdump: listening on br-ex, link-type EN10MB (Ethernet), snapshot length 262144
 </div>
 </li>
 <li>
-<p>Now let us examine your OVN bridge mappings.</p>
+<p>Now let us examine your OVN bridge mappings. Run the below command on the <strong>compute</strong> node.</p>
 <div class="listingblock">
 <div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">ovs-vsctl list open .</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Sample output</div>
+<div class="content">
 <pre>[root@compute01 ~]# ovs-vsctl list open .
-_uuid               : 54ee4d39-0f5f-4be7-9253-e7963bf0ec50
-bridges             : [791bdbc0-dd86-4887-a8da-6a4ec607a78a, 87964f92-7b3f-4369-ae35-1fbdae989968, b70a83c6-601e-4bd4-aa4b-17eed47dd582]
-cur_cfg             : 243
+_uuid               : f40f8bed-c407-4a8e-82c6-5e2b609bd143
+bridges             : [0964364a-dc77-4dcc-8e8d-5889c53e6749, 39832bfb-915c-41be-9ebd-22bf04fb17dd, b02d474e-5d5c-41e2-ad77-976d7b4c44d2]
+cur_cfg             : 39
 datapath_types      : [netdev, system]
-datapaths           : {system=e0825819-b833-4f7a-af2b-a9c5d404be2a}
+datapaths           : {system=5663d999-85b5-475f-b893-6916270b4b68}
 db_version          : "8.5.0"
 dpdk_initialized    : false
-dpdk_version        : "DPDK 23.11.0"
-external_ids        : {hostname=compute01.srv.example.com, ovn-bridge=br-int, ovn-chassis-mac-mappings="datacentre:0e:0a:e5:24:00:67", ovn-cms-options=enable-chassis-as-gw, ovn-encap-ip="172.19.0.110", ovn-encap-tos="0", ovn-encap-type=geneve, ovn-match-northd-version=False, ovn-monitor-all=True, ovn-ofctrl-wait-before-clear="8000", ovn-remote="ssl:ovsdbserver-sb.openstack.svc:6642", ovn-remote-probe-interval="60000", rundir="/var/run/openvswitch", system-id="08d5cafe-22c0-4ea8-b026-908330a80389"}
+dpdk_version        : "DPDK 23.11.2"
+external_ids        : {hostname=compute01.srv.example.com, ovn-bridge=br-int, ovn-chassis-mac-mappings="datacentre:0e:0a:38:8e:8e:08", ovn-encap-ip="172.19.0.110", ovn-encap-tos="0", ovn-encap-type=geneve, ovn-match-northd-version=False, ovn-monitor-all=True, ovn-ofctrl-wait-before-clear="8000", ovn-remote="ssl:ovsdbserver-sb.openstack.svc:6642", ovn-remote-probe-interval="60000", rundir="/var/run/openvswitch", system-id="6b475747-b459-4488-b670-91252b56d663"}
 iface_types         : [bareudp, erspan, geneve, gre, gtpu, internal, ip6erspan, ip6gre, lisp, patch, srv6, stt, system, tap, vxlan]
-manager_options     : [71d44a22-8aae-4efa-a104-9fba5f38f795]
-next_cfg            : 243
-other_config        : {ovn-chassis-idx-08d5cafe-22c0-4ea8-b026-908330a80389="", vlan-limit="0"}
-ovs_version         : "3.3.3-49.el9fdp"
+manager_options     : [241be795-53a8-4fef-be2a-667d77558060]
+next_cfg            : 39
+other_config        : {ovn-chassis-idx-6b475747-b459-4488-b670-91252b56d663="", vlan-limit="0"}
+ovs_version         : "3.3.4-62.el9fdp"
 ssl                 : []
 statistics          : {}
 system_type         : rhel
-system_version      : "9.4"</pre>
+system_version      : "9.4"
+[root@compute01 ~]#</pre>
 </div>
 </div>
 <div class="admonitionblock note">
@@ -356,7 +421,7 @@ system_version      : "9.4"</pre>
 <p>This output shows the OVN setup, including bridges, data paths, and various configurations. Bridge mapping is stored in external_ids.</p>
 <div class="listingblock">
 <div class="content">
-<pre>external_ids        : {hostname=compute01.srv.example.com, ovn-bridge=br-int, ovn-chassis-mac-mappings="datacentre:0e:0a:e5:24:00:67", ovn-cms-options=enable-chassis-as-gw, ovn-encap-ip="172.19.0.110", ovn-encap-tos="0", ovn-encap-type=geneve, ovn-match-northd-version=False, ovn-monitor-all=True, ovn-ofctrl-wait-before-clear="8000", ovn-remote="ssl:ovsdbserver-sb.openstack.svc:6642", ovn-remote-probe-interval="60000", rundir="/var/run/openvswitch", system-id="08d5cafe-22c0-4ea8-b026-908330a80389"}
+<pre>external_ids        : {hostname=compute01.srv.example.com, ovn-bridge=br-int, ovn-chassis-mac-mappings="datacentre:0e:0a:38:8e:8e:08", ovn-encap-ip="172.19.0.110", ovn-encap-tos="0", ovn-encap-type=geneve, ovn-match-northd-version=False, ovn-monitor-all=True, ovn-ofctrl-wait-before-clear="8000", ovn-remote="ssl:ovsdbserver-sb.openstack.svc:6642", ovn-remote-probe-interval="60000", rundir="/var/run/openvswitch", system-id="6b475747-b459-4488-b670-91252b56d663"}
 iface_types         : [bareudp, erspan, geneve, gre, gtpu, internal, ip6erspan, ip6gre, lisp, patch, srv6, stt, system, tap, vxlan]</pre>
 </div>
 </div>
@@ -365,8 +430,14 @@ iface_types         : [bareudp, erspan, geneve, gre, gtpu, internal, ip6erspan, 
 </div>
 </li>
 <li>
-<p>Explore public network details.</p>
+<p>Explore public network details from the <strong>workstation</strong> vm.</p>
 <div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc exec -n openstack openstackclient -- openstack network show public</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Sample output</div>
 <div class="content">
 <pre>[student@workstation ~]$ oc exec -n openstack openstackclient -- openstack network show public
 +---------------------------+--------------------------------------+
@@ -375,10 +446,10 @@ iface_types         : [bareudp, erspan, geneve, gre, gtpu, internal, ip6erspan, 
 | admin_state_up            | UP                                   |
 | availability_zone_hints   |                                      |
 | availability_zones        |                                      |
-| created_at                | 2025-03-31T09:33:26Z                 |
+| created_at                | 2025-05-04T21:29:27Z                 |
 | description               |                                      |
 | dns_domain                |                                      |
-| id                        | ee961465-e812-4563-aaa8-05adb3476889 |
+| id                        | 5526bfcf-a164-4a91-ad99-90bb5c41f500 |
 | ipv4_address_scope        | None                                 |
 | ipv6_address_scope        | None                                 |
 | is_default                | False                                |
@@ -387,7 +458,7 @@ iface_types         : [bareudp, erspan, geneve, gre, gtpu, internal, ip6erspan, 
 | mtu                       | 1500                                 |
 | name                      | public                               |
 | port_security_enabled     | True                                 |
-| project_id                | 7ac1618d984947c0bfcbf713a94fed4a     |
+| project_id                | d388b58059514443a8dced8c2ed691f6     |
 | provider:network_type     | flat                                 |
 | provider:physical_network | datacentre                           |
 | provider:segmentation_id  | None                                 |
@@ -397,15 +468,16 @@ iface_types         : [bareudp, erspan, geneve, gre, gtpu, internal, ip6erspan, 
 | segments                  | None                                 |
 | shared                    | False                                |
 | status                    | ACTIVE                               |
-| subnets                   | 3c99909a-9d7a-486a-9df5-6e3fb210df61 |
+| subnets                   | b5a9f748-df82-436a-b8e3-14912e258b5d |
 | tags                      |                                      |
-| tenant_id                 | 7ac1618d984947c0bfcbf713a94fed4a     |
-| updated_at                | 2025-03-31T09:33:30Z                 |
-+---------------------------+--------------------------------------+</pre>
+| tenant_id                 | d388b58059514443a8dced8c2ed691f6     |
+| updated_at                | 2025-05-04T21:29:35Z                 |
++---------------------------+--------------------------------------+
+[student@workstation ~]$</pre>
 </div>
 </div>
 <div class="paragraph">
-<p>In this output, find information about the "public" network, including its physical network, which is labeled as "datacentre."</p>
+<p>In this output, find information about the "public" network, including its physical network, which is labeled as <strong>datacentre</strong>.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -423,7 +495,7 @@ iface_types         : [bareudp, erspan, geneve, gre, gtpu, internal, ip6erspan, 
 </td>
 <td class="content">
 <div class="paragraph">
-<p>The issue at hand is that OVN does not inherently know that the br-ex` bridge represents the `datacenter`provider network.</p>
+<p>The issue at hand is that OVN does not inherently know that the <strong>br-ex</strong> bridge represents the <strong>datacenter provider network</strong>.</p>
 </div>
 </td>
 </tr>
@@ -434,39 +506,51 @@ iface_types         : [bareudp, erspan, geneve, gre, gtpu, internal, ip6erspan, 
 </div>
 </li>
 <li>
-<p>Configure the OVN bridge mapping settings using the ovs-vsctl set command.</p>
+<p>Configure the OVN bridge mapping settings using the ovs-vsctl set command on the <strong>compute</strong> node.</p>
 <div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">ovs-vsctl set open . external_ids:ovn-bridge-mappings=datacentre:br-ex</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Sample output</div>
 <div class="content">
 <pre>[root@compute01 ~]# ovs-vsctl set open . external_ids:ovn-bridge-mappings=datacentre:br-ex</pre>
 </div>
 </div>
 </li>
 <li>
-<p>Re-run the ovs-vsctl show command to verify that a patch port has been created between br-int and br-ex.</p>
+<p>Re-run the ovs-vsctl show command on the <strong>compute</strong> node to verify that a patch port has been created between br-int and br-ex.</p>
 <div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">ovs-vsctl show</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Sample output</div>
 <div class="content">
 <pre>[root@compute01 ~]# ovs-vsctl show
 . . .
+    Bridge br-ex
+        fail_mode: standalone
+        Port br-ex
+            Interface br-ex
+                type: internal
+        Port eth2
+            Interface
+
+        Port patch-provnet-392f50ef-731c-4984-916d-9ce45906ace1-to-br-int
+            Interface patch-provnet-392f50ef-731c-4984-916d-9ce45906ace1-to-br-int
+                type: patch
+                options: {peer=patch-br-int-to-provnet-392f50ef-731c-4984-916d-9ce45906ace1}
     Bridge br-int
         fail_mode: secure
         datapath_type: system
 . . .
-		Port patch-br-int-to-provnet-84157851-395c-40eb-a3ec-6b512dd58759
-            Interface patch-br-int-to-provnet-84157851-395c-40eb-a3ec-6b512dd58759
+        Port patch-br-int-to-provnet-392f50ef-731c-4984-916d-9ce45906ace1
+            Interface patch-br-int-to-provnet-392f50ef-731c-4984-916d-9ce45906ace1
                 type: patch
-                options: {peer=patch-provnet-84157851-395c-40eb-a3ec-6b512dd58759-to-br-int}
-. . .
-    Bridge br-ex
-        fail_mode: standalone
-        Port patch-provnet-84157851-395c-40eb-a3ec-6b512dd58759-to-br-int
-            Interface patch-provnet-84157851-395c-40eb-a3ec-6b512dd58759-to-br-int
-                type: patch
-                options: {peer=patch-br-int-to-provnet-84157851-395c-40eb-a3ec-6b512dd58759}
-        Port eth2
-            Interface eth2
-        Port br-ex
-            Interface br-ex
-                type: internal
+                options: {peer=patch-provnet-392f50ef-731c-4984-916d-9ce45906ace1-to-br-int}
 . . .</pre>
 </div>
 </div>
@@ -474,68 +558,11 @@ iface_types         : [bareudp, erspan, geneve, gre, gtpu, internal, ip6erspan, 
 <p>This connection is crucial for proper network communication. By addressing this missing link, we can ensure that traffic flows smoothly between the internal and external networks, thus resolving the connectivity issue we encountered.</p>
 </div>
 </li>
-<li>
-<p>Test ssh and ping again to ensure that both are now working.</p>
-<div class="listingblock">
-<div class="content">
-<pre>[student@workstation roles]$ ping 192.168.51.165 -c 1
-PING 192.168.51.165 (192.168.51.165) 56(84) bytes of data.
-64 bytes from 192.168.51.165: icmp_seq=1 ttl=62 time=16.1 ms
-
---- 192.168.51.165 ping statistics ---
-1 packets transmitted, 1 received, 0% packet loss, time 0ms
-rtt min/avg/max/mdev = 16.120/16.120/16.120/0.000 ms
-
-[student@workstation ~]$ ssh -i /tmp/scenario-bfx026-key.pem cirros@192.168.51.165
-Warning: Permanently added '192.168.51.165' (ECDSA) to the list of known hosts.
-sign_and_send_pubkey: no mutual signature supported
-cirros@192.168.51.165's password:
-$ uname -r
-5.3.0-26-generic
-$exit
-Connection to 192.168.51.165 closed.</pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Note that for DVR, bridge mappings are required on compute nodes to access the provider network (public). This would ensure connectivity to the floating IP.</p>
-</div>
-</li>
 </ol>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_evaluation"><a class="anchor" href="#_evaluation"></a>Evaluation</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>As the stack user on the director machine, use the lab command to grade your work. Correct any reported failures and rerun the command until successful.</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre>[stack@director ~]$ lab grade bfx026</pre>
-</div>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_finish"><a class="anchor" href="#_finish"></a>Finish</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>Run the lab finish command to complete this exercise. This step is important to ensure that resources from previous exercises do not impact upcoming exercises.</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre>[stack@director ~]$ lab finish bfx026</pre>
-</div>
-</div>
-<div class="paragraph">
-<p>This concludes the section.</p>
-</div>
-</div>
 </div>
 <nav class="pagination">
   <span class="prev"><a href="section1.html">Guided solution (page 1)</a></span>
-  <span class="next"><a href="../appendix/appendix.html">Appendix</a></span>
+  <span class="next"><a href="section3.html">Evalution</a></span>
 </nav>
 </article>
   </div>

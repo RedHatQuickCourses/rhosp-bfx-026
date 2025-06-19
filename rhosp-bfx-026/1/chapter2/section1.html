@@ -40,7 +40,7 @@
   <li class="nav-item" data-depth="0">
 <ul class="nav-list">
   <li class="nav-item" data-depth="1">
-    <a class="nav-link" href="../index.html">Red Hat OpenStack Platform: Break-fix Practice - Resolving No Route to Host and Destination Host Unreachable for SSH</a>
+    <a class="nav-link" href="../index.html">Red Hat OpenStack Platform: Break-fix Practice - 1</a>
   </li>
 </ul>
   </li>
@@ -81,6 +81,9 @@
   </li>
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="section2.html">Guided solution (page 2)</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="section3.html">Evalution</a>
   </li>
 </ul>
   </li>
@@ -133,117 +136,228 @@
 </aside>
 <article class="doc">
 <h1 class="page">Guided solution (page 1)</h1>
-<div class="sect1">
-<h2 id="_objectives"><a class="anchor" href="#_objectives"></a>Objectives</h2>
-<div class="sectionbody">
-<div class="ulist">
-<ul>
-<li>
-<p>Investigate the instance connectivity issue in Red Hat OpenStack Platform.</p>
-</li>
-<li>
-<p>Solve the instance connectivity in the hands-on lab environment.</p>
-</li>
-</ul>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_outcomes"><a class="anchor" href="#_outcomes"></a>Outcomes</h2>
-<div class="sectionbody">
-<div class="ulist">
-<ul>
-<li>
-<p>Investigate why ssh to instance is not working.</p>
-</li>
-<li>
-<p>Fix the ssh to instance failing issue.</p>
-</li>
-</ul>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_instructions"><a class="anchor" href="#_instructions"></a>Instructions</h2>
-<div class="sectionbody">
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p>Break the environment if you have not done it and step through the fix.</p>
+<p>Log in to your lab environment on the <strong>ROLE</strong> platform.</p>
+</li>
+<li>
+<p>Break the environment if you have not done it and then step through the fix.</p>
+<div class="paragraph">
+<p>As the <strong>student</strong> user, run the lab start script on the <strong>workstation</strong> VM to reproduce the issue.</p>
+</div>
 <div class="listingblock">
 <div class="content">
-<pre>[student@workstation ~]$ lab start bfx026
-Running break action against scenario bfx026
-Run the following command:
-ssh -i /tmp/scenario-bfx026-key.pem cirros@192.168.51.165</pre>
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">cd /home/student/osp_training/scenarios_repo/
+./lab start bfx026</code></pre>
 </div>
+</div>
+<div class="listingblock">
+<div class="title">Sample output</div>
+<div class="content">
+<pre>[student@workstation scenarios_repo]$ ./lab start bfx026
+Running start action against scenario bfx026
+[WARNING]: Invalid characters were found in group names but not replaced, use
+-vvvv to see details
+Run the following command:
+ssh -i /tmp/scenario-bfx026-key.pem cirros@192.168.51.98</pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+The IP address in the displayed output may differ in your case.
+</td>
+</tr>
+</table>
 </div>
 </li>
 <li>
-<p>Run the ssh command from the previous lab command output and notice the No route to host error. Also run the ping command against instance IP.</p>
+<p>Run the ssh command from the previous lab command output and notice the Connection timed out error. Also run the ping command against instance IP.</p>
 <div class="listingblock">
 <div class="content">
-<pre>[student@workstation ~]$ ssh -i /tmp/scenario-bfx026-key.pem cirros@192.168.51.165
-ssh: connect to host 192.168.51.165 port 22: No route to host
-
-[student@workstation ~]$ ping 192.168.51.165 -c 1
-PING 192.168.51.165 (192.168.51.165) 56(84) bytes of data.
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">ssh -i /home/student/osp_training/.scenariobfx026/scenario-bfx026-key.pem cirros@instance.ip.in.your.lab</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">ping instance.ip.in.your.lab -c 1</code></pre>
+</div>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+In the above commands <strong>replace</strong> the string <strong>instance.ip.in.your.lab</strong> with the <strong>actual IP</strong> address displayed in the output of the lab start script.
+</td>
+</tr>
+</table>
+</div>
+<div class="listingblock">
+<div class="title">Sample output</div>
+<div class="content">
+<pre>[student@workstation ~]$ ssh -i /tmp/scenario-bfx026-key.pem cirros@192.168.51.98
+ssh: connect to host 192.168.51.98 port 22: No route to host
+[student@workstation ~]$
+[student@workstation ~]$ ping 192.168.51.98 -c 1
+PING 192.168.51.98 (192.168.51.98) 56(84) bytes of data.
 From 172.25.250.253 icmp_seq=1 Destination Host Unreachable
 
---- 192.168.51.165 ping statistics ---
-1 packets transmitted, 0 received, +1 errors, 100% packet loss, time 0ms</pre>
+--- 192.168.51.98 ping statistics ---
+1 packets transmitted, 0 received, +1 errors, 100% packet loss, time 0ms
+
+[student@workstation ~]$</pre>
 </div>
 </div>
 <div class="paragraph">
-<p>You observe that both ssh and ping attempts failed which indicates lack of connectivity.</p>
+<p><strong>You observe that both ping and ssh attempts failed which indicates lack of connectivity.</strong></p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+Only the utility server has configured IP address which belongs to the same Layer 2 (L2) domain as the Floating IP associated to the VM.
+</td>
+</tr>
+</table>
 </div>
 </li>
 <li>
-<p>Because the ping test failed, it is essential to double-check with ARP. Open run tcpdump on one terminal and open a new terminal and ping the IP of the instance.</p>
-<div class="paragraph">
-<p>Due to the fact that only the <code>utility</code> server has L2 access to the OSP External Network, you have to check ARP on that server.</p>
+<p>Establish an SSH connection to the utility VM, then verify ping connectivity and ARP resolution from there.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">ssh lab@utility</code></pre>
 </div>
-</li>
-</ol>
 </div>
 <div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">ping 192.168.51.98 -c 1</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Sample output</div>
 <div class="content">
 <pre>[student@workstation ~]$ ssh lab@utility
 Register this system with Red Hat Insights: insights-client --register
 Create an account or view all your systems at https://red.ht/insights-dashboard
-Last login: Mon Mar 31 06:27:54 2025 from 172.25.250.9
-[lab@utility ~]$ sudo -i
-[root@utility ~]# ip neighbour | grep 192.168.51.165
-192.168.51.165 dev eth2 FAILED
+Last login: Tue Jun 17 02:02:33 2025 from 172.25.250.9
+[lab@utility ~]$
+[lab@utility ~]$ ping 192.168.51.98 -c 1
+PING 192.168.51.98 (192.168.51.98) 56(84) bytes of data.
+From 192.168.51.254 icmp_seq=1 Destination Host Unreachable
 
-[root@utility ~]# tcpdump -envvi eth2 | grep 192.168.51.165
-dropped privs to tcpdump
-tcpdump: listening on eth2, link-type EN10MB (Ethernet), snapshot length 262144 bytes
-06:16:50.625686 52:54:00:02:33:fe &gt; Broadcast, ethertype ARP (0x0806), length 42: Ethernet (len 6), IPv4 (len 4), Request who-has 192.168.51.165 tell 192.168.51.254, length 28
-06:16:51.656605 52:54:00:02:33:fe &gt; Broadcast, ethertype ARP (0x0806), length 42: Ethernet (len 6), IPv4 (len 4), Request who-has 192.168.51.165 tell 192.168.51.254, length 28
-06:16:52.680579 52:54:00:02:33:fe &gt; Broadcast, ethertype ARP (0x0806), length 42: Ethernet (len 6), IPv4 (len 4), Request who-has 192.168.51.165 tell 192.168.51.254, length 28</pre>
+--- 192.168.51.98 ping statistics ---
+1 packets transmitted, 0 received, +1 errors, 100% packet loss, time 0ms</pre>
 </div>
 </div>
-<div class="paragraph">
-<p>+
-You observe that ARP requests are being sent, but no responses are being received.</p>
-</div>
-<div class="olist arabic">
-<ol class="arabic">
+</li>
 <li>
-<p>Use openstackclient POD and check where the VM is running.</p>
+<p>Because the ping test failed, it is essential to double-check with ARP.</p>
+</li>
+<li>
+<p>Only the <strong>utility</strong> server has L2 access to the OSP External Network, hence you have to check ARP on that server.</p>
 <div class="listingblock">
 <div class="content">
-<pre>[student@workstation ~]$ oc exec -n openstack openstackclient -- openstack server list --long
-+--------------------------------------+--------------------+--------+------------+-------------+---------------------------------------------------------+---------------------+--------------------------------------+----------+-------------------+---------------------------+------------+-------------+
-| ID                                   | Name               | Status | Task State | Power State | Networks                                                | Image Name          | Image ID                             | Flavor   | Availability Zone | Host                      | Properties | Host Status |
-+--------------------------------------+--------------------+--------+------------+-------------+---------------------------------------------------------+---------------------+--------------------------------------+----------+-------------------+---------------------------+------------+-------------+
-| 410602ae-a400-4358-9723-312c493e409f | scenario-bfx026-vm | ACTIVE | None       | Running     | scenario-bfx026-network=192.168.190.187, 192.168.51.165 | cirros-0.5.2-x86_64 | 10210206-c30a-4765-8547-0dad335b5675 | m1.small | nova              | compute01.srv.example.com |            | UP          |
-+--------------------------------------+--------------------+--------+------------+-------------+---------------------------------------------------------+---------------------+--------------------------------------+----------+-------------------+---------------------------+------------+-------------+</pre>
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">ip neighbour | grep 192.168.51.98</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Sample output</div>
+<div class="content">
+<pre>[root@utility ~]# ip neighbour | grep 192.168.51.98
+192.168.51.98 dev eth2 FAILED</pre>
+</div>
+</div>
+</li>
+<li>
+<p>Identify the network interface on the <strong>utility</strong> vm which is in the same IP address range as that of OSP External network.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">ip address</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Sample output</div>
+<div class="content">
+<pre>. . .
+4: eth2: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc fq_codel state UP group default qlen 1000
+    link/ether 52:54:00:02:33:fe brd ff:ff:ff:ff:ff:ff
+    altname enp0s5
+    altname ens5
+    inet 192.168.51.254/24 brd 192.168.51.255 scope global noprefixroute eth2
+       valid_lft forever preferred_lft forever
+    inet6 fe80::ae34:5b6d:c0af:8a10/64 scope link noprefixroute
+       valid_lft forever preferred_lft forever
+. . .</pre>
+</div>
+</div>
+</li>
+<li>
+<p>Run tcpdump on <strong>utility</strong> vm in one terminal and open a new terminal and ping the IP of the instance from <strong>wokstation</strong></p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">sudo tcpdump -envvi eth2 arp</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Sample output terminal 1</div>
+<div class="content">
+<pre>[lab@utility ~]$ sudo tcpdump -envvi eth2 arp
+dropped privs to tcpdump
+tcpdump: listening on eth2, link-type EN10MB (Ethernet), snapshot length 262144 bytes
+03:51:55.835096 52:54:00:02:33:fe &gt; Broadcast, ethertype ARP (0x0806), length 42: Ethernet (len 6), IPv4 (len 4), Request who-has 192.168.51.98 tell 192.168.51.254, length 28
+03:51:56.841041 52:54:00:02:33:fe &gt; Broadcast, ethertype ARP (0x0806), length 42: Ethernet (len 6), IPv4 (len 4), Request who-has 192.168.51.98 tell 192.168.51.254, length 28
+03:51:57.865025 52:54:00:02:33:fe &gt; Broadcast, ethertype ARP (0x0806), length 42: Ethernet (len 6), IPv4 (len 4), Request who-has 192.168.51.98 tell 192.168.51.254, length 28</pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Sample output terminal 2</div>
+<div class="content">
+<pre>[lab@utility ~]$ ping 192.168.51.98 -c 3
+PING 192.168.51.98 (192.168.51.98) 56(84) bytes of data.
+From 192.168.51.254 icmp_seq=1 Destination Host Unreachable
+From 192.168.51.254 icmp_seq=2 Destination Host Unreachable
+From 192.168.51.254 icmp_seq=3 Destination Host Unreachable
+
+--- 192.168.51.98 ping statistics ---
+3 packets transmitted, 0 received, +3 errors, 100% packet loss, time 2030ms</pre>
 </div>
 </div>
 <div class="paragraph">
-<p>You observe that it is compute01.srv.example.com.</p>
+<p><strong>You observe that ARP requests are being sent, but no responses are being received.</strong></p>
+</div>
+</li>
+<li>
+<p>On the <strong>workstation</strong> vm use the openstackclient pod and check where the VM is running.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc exec -n openstack openstackclient -- openstack server list --long -c Name -c Status -c Host</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Sample output</div>
+<div class="content">
+<pre>[student@workstation ~]$ oc exec -n openstack openstackclient -- openstack server list --long -c Name -c Status -c Host
++--------------------+--------+---------------------------+
+| Name               | Status | Host                      |
++--------------------+--------+---------------------------+
+| scenario-bfx026-vm | ACTIVE | compute01.srv.example.com |
++--------------------+--------+---------------------------+
+[student@workstation ~]$</pre>
+</div>
+</div>
+<div class="paragraph">
+<p><strong>In the above output you observe that it is compute01.srv.example.com. This may vary in your case</strong></p>
 </div>
 <div class="admonitionblock note">
 <table>
@@ -261,18 +375,19 @@ You observe that ARP requests are being sent, but no responses are being receive
 </div>
 </li>
 <li>
-<p>Identify the network interface used under external bridge br-ex.</p>
+<p>Login to the <strong>compute</strong> node where instance is running and run <strong>ovs-vsctl show</strong> command.</p>
 <div class="listingblock">
+<div class="title">Sample output</div>
 <div class="content">
 <pre>[student@workstation ~]$ ssh root@compute01.srv.example.com
 Activate the web console with: systemctl enable --now cockpit.socket
 
 Register this system with Red Hat Insights: insights-client --register
 Create an account or view all your systems at https://red.ht/insights-dashboard
-Last login: Wed Apr  2 09:58:41 2025 from 192.168.51.254
-
+Last login: Tue Jun 17 10:48:42 2025 from 192.168.51.254
+[root@compute01 ~]#
 [root@compute01 ~]# ovs-vsctl show
-...
+. . .
     Bridge br-ex
         fail_mode: standalone
         Port br-ex
@@ -280,24 +395,56 @@ Last login: Wed Apr  2 09:58:41 2025 from 192.168.51.254
                 type: internal
         Port eth2
             Interface eth2
-...</pre>
+. . .</pre>
 </div>
+</div>
+<div class="paragraph">
+<p><strong>Identify the network interface used under external bridge br-ex.</strong></p>
 </div>
 </li>
 <li>
-<p>Verify the ARP requests on the Ethernet device ens4 used under br-ex.</p>
+<p>Verify the ARP requests on the Ethernet device eth2 used under br-ex.</p>
+<div class="paragraph">
+<p><strong>Run tcpdump on the compute node</strong></p>
+</div>
 <div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">tcpdump -envvi eth2 arp</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><strong>Run ping from the utility vm</strong></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">ping IP -c 3</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><strong>Replace IP with appropriate string</strong></p>
+</div>
+<div class="listingblock">
+<div class="title">Sample output terminal 1</div>
 <div class="content">
 <pre>[root@compute01 ~]# tcpdump -envvi eth2 arp
 dropped privs to tcpdump
 tcpdump: listening on eth2, link-type EN10MB (Ethernet), snapshot length 262144 bytes
-10:32:30.176581 52:54:00:02:33:fe &gt; Broadcast, ethertype ARP (0x0806), length 42: Ethernet (len 6), IPv4 (len 4), Request who-has 192.168.51.165 tell 192.168.51.254, length 28
-10:32:31.176926 52:54:00:02:33:fe &gt; Broadcast, ethertype ARP (0x0806), length 42: Ethernet (len 6), IPv4 (len 4), Request who-has 192.168.51.165 tell 192.168.51.254, length 28
-10:32:32.200834 52:54:00:02:33:fe &gt; Broadcast, ethertype ARP (0x0806), length 42: Ethernet (len 6), IPv4 (len 4), Request who-has 192.168.51.165 tell 192.168.51.254, length 28
-^C
-3 packets captured
-3 packets received by filter
-0 packets dropped by kernel</pre>
+08:03:47.363832 52:54:00:02:33:fe &gt; Broadcast, ethertype ARP (0x0806), length 42: Ethernet (len 6), IPv4 (len 4), Request who-has 192.168.51.98 tell 192.168.51.254, length 28
+08:03:48.394094 52:54:00:02:33:fe &gt; Broadcast, ethertype ARP (0x0806), length 42: Ethernet (len 6), IPv4 (len 4), Request who-has 192.168.51.98 tell 192.168.51.254, length 28
+08:03:49.418039 52:54:00:02:33:fe &gt; Broadcast, ethertype ARP (0x0806), length 42: Ethernet (len 6), IPv4 (len 4), Request who-has 192.168.51.98 tell 192.168.51.254, length 28</pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Sample output terminal 2</div>
+<div class="content">
+<pre>[lab@utility ~]$ ping 192.168.51.98 -c 3
+PING 192.168.51.98 (192.168.51.98) 56(84) bytes of data.
+From 192.168.51.254 icmp_seq=1 Destination Host Unreachable
+From 192.168.51.254 icmp_seq=2 Destination Host Unreachable
+From 192.168.51.254 icmp_seq=3 Destination Host Unreachable
+
+--- 192.168.51.98 ping statistics ---
+3 packets transmitted, 0 received, +3 errors, 100% packet loss, time 2055ms</pre>
 </div>
 </div>
 <div class="ulist">
@@ -318,33 +465,54 @@ tcpdump: listening on eth2, link-type EN10MB (Ethernet), snapshot length 262144 
 <p>List the floating IP and ensure its alignment with the fixed IP address.</p>
 <div class="listingblock">
 <div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc exec -n openstack openstackclient -- openstack floating ip list</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Sample output</div>
+<div class="content">
 <pre>[student@workstation ~]$ oc exec -n openstack openstackclient -- openstack floating ip list
 +--------------------------------------+---------------------+------------------+--------------------------------------+--------------------------------------+----------------------------------+
 | ID                                   | Floating IP Address | Fixed IP Address | Port                                 | Floating Network                     | Project                          |
 +--------------------------------------+---------------------+------------------+--------------------------------------+--------------------------------------+----------------------------------+
-| 5a1eb6f3-d643-4169-8deb-e6b2042d9c19 | 192.168.51.165      | 192.168.190.187  | 3abe5cf3-3d40-4c02-af97-59946cfd3951 | ee961465-e812-4563-aaa8-05adb3476889 | 7ac1618d984947c0bfcbf713a94fed4a |
-+--------------------------------------+---------------------+------------------+--------------------------------------+--------------------------------------+----------------------------------+</pre>
+| 13261cca-3b7a-4229-9c63-aa3d49a0c110 | 192.168.51.98       | 192.168.190.127  | d2db5833-99bd-4de0-a7ca-bf8c1321882c | 5526bfcf-a164-4a91-ad99-90bb5c41f500 | d388b58059514443a8dced8c2ed691f6 |
++--------------------------------------+---------------------+------------------+--------------------------------------+--------------------------------------+----------------------------------+
+[student@workstation ~]$</pre>
 </div>
 </div>
 </li>
 <li>
-<p>Connect to the metadata namespace and ping to instance&#8217;s fixed IP address from there. Run the following command on the compute node.</p>
+<p>Connect to the metadata namespace and ping to instance&#8217;s fixed IP address from there.</p>
+</li>
+<li>
+<p>Run the following command on the <strong>compute</strong> node.</p>
 <div class="listingblock">
 <div class="content">
-<pre>[root@compute01 ~]# ip netns
-ovnmeta-1655a6ba-a91e-4d79-9e2f-ba6d44807c2a (id: 0)
-
-[root@compute01 ~]# ip netns exec ovnmeta-1655a6ba-a91e-4d79-9e2f-ba6d44807c2a ping 192.168.190.187 -c 1
-PING 192.168.190.187 (192.168.190.187) 56(84) bytes of data.
-64 bytes from 192.168.190.187: icmp_seq=1 ttl=64 time=1.43 ms
-
---- 192.168.190.187 ping statistics ---
-1 packets transmitted, 1 received, 0% packet loss, time 0ms
-rtt min/avg/max/mdev = 1.425/1.425/1.425/0.000 ms</pre>
+<pre>ip netns
+ip netns exec &lt;namespace&gt; ping &lt;fixed ip of instance&gt; -c 1</pre>
 </div>
 </div>
 <div class="paragraph">
-<p>If you get a response, it means that the VM&#8217;s network is functioning correctly locally.</p>
+<p><strong>Replace &lt;namespace&gt; and &lt;fixed ip of instance&gt; with the appropriate string from the previous output.</strong></p>
+</div>
+<div class="listingblock">
+<div class="title">Sample output</div>
+<div class="content">
+<pre>[root@compute01 ~]# ip netns
+ovnmeta-96cd71b0-2988-43ca-bfd3-b3a9ddc59d51 (id: 0)
+[root@compute01 ~]#
+[root@compute01 ~]# ip netns exec ovnmeta-96cd71b0-2988-43ca-bfd3-b3a9ddc59d51 ping 192.168.190.127 -c 1
+PING 192.168.190.127 (192.168.190.127) 56(84) bytes of data.
+64 bytes from 192.168.190.127: icmp_seq=1 ttl=64 time=0.543 ms
+
+--- 192.168.190.127 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 0.543/0.543/0.543/0.000 ms
+[root@compute01 ~]#</pre>
+</div>
+</div>
+<div class="paragraph">
+<p><strong>If you receive a response, it indicates that the VM&#8217;s local network is functioning properly.</strong></p>
 </div>
 <div class="admonitionblock note">
 <table>
@@ -361,12 +529,7 @@ rtt min/avg/max/mdev = 1.425/1.425/1.425/0.000 ms</pre>
 </table>
 </div>
 </li>
-<li>
-<p>Install the openvswitch-test packages if not already installed.</p>
-</li>
 </ol>
-</div>
-</div>
 </div>
 <nav class="pagination">
   <span class="prev"><a href="index.html">Guided solution</a></span>
