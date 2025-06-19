@@ -1,6 +1,6 @@
 = Check your work
 
-== Check your work using the grading script
+== Check your work using the grading script:
 ----
 [student@workstation ~]$ lab grade bfx026
 Running grade action against scenario bfx026
@@ -12,6 +12,7 @@ Instance IP address from the preceding output can differ in your environment.
 ====
 Provide the gocubsgo as a password.
 ====
+
 == Success Criteria
 Successful completion of this activity requires that ssh to instance is working:
 ----

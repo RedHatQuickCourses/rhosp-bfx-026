@@ -1,25 +1,26 @@
-= Red Hat OpenStack Platform: Break-fix Practice - Resolving No Route to Host and Destination Host Unreachable for SSH
+= Red Hat OpenStack Platform: Break-fix Practice - 1
 
 :navtitle: Home
 
-== Introduction
+== Resolving No Route to Host and Destination Host Unreachable for SSH
 
-Description:
+==== Introduction
+
 This break-fix training simulates a problem where connectivity to instance running on Red Hat OpenStack is compromised. You will investigate and solve the problem in a hands-on lab environment to complete the training.
 
-== Course Objectives
+=== Course Objectives
 
 * Investigate the instance connectivity issue in Red Hat OpenStack Platform.
 * Solve the instance connectivity in the hands-on lab environment.
 
-== Audience
+=== Audience
 
 * Support Engineers
 * Technical Account Managers
 * Solution Architects
 * Consultants
 
-== Prerequisites
+=== Prerequisites
 
 * RHCE or have equivalent knowledge.
 * Either you have completed the Red Hat OpenStack Administration I: Core Operations for Domain Operators course (CL110) or have equivalent knowledge.

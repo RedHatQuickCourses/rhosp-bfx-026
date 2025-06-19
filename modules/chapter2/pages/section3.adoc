@@ -1,0 +1,56 @@
+= Evalution
+
+Test ssh and ping again to ensure that both are now working.
+
+[source, bash]
+----
+ping floating.ip.of.instance -c1
+ssh -i /tmp/scenario-bfx026-key.pem cirros@floating.ip.of.instance cat /etc/cirros/version
+----
+
+**Replace floating.ip.of.instance with actual ip address**
+
+.Sample output
+----
+[student@workstation ~]$ ping 192.168.51.98 -c1
+PING 192.168.51.98 (192.168.51.98) 56(84) bytes of data.
+64 bytes from 192.168.51.98: icmp_seq=1 ttl=62 time=3.15 ms
+
+--- 192.168.51.98 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 3.154/3.154/3.154/0.000 ms
+[student@workstation ~]$ 
+[student@workstation ~]$ ssh -i /tmp/scenario-bfx026-key.pem cirros@192.168.51.98 cat /etc/cirros/version
+0.5.2
+[student@workstation ~]$ 
+----
+
+**Verify that these actions are successful, indicating that the instance created using the new image is now accessible.**
+NOTE: Note that for DVR, bridge mappings are required on compute nodes to access the provider network (public). This would ensure connectivity to the floating IP.
+
+
+== Evaluation
+
+As the student user on the workstation vm, use the lab command to grade your work.
+
+[source, bash]
+----
+cd ~/osp_training/scenarios_repo/
+./lab grade bfx026
+----
+
+[NOTE]
+====
+Provide the gocubsgo as a password if prompted by the grade action.
+====
+
+== Finish
+
+Run the lab finish command to complete this exercise. This step is important to ensure that resources from current exercises do not impact upcoming exercises.
+
+----
+cd ~/osp_training/scenarios_repo/
+./lab finish bfx026
+----
+
+This concludes the lab exercise.
