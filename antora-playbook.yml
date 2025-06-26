@@ -1,5 +1,5 @@
 site:
-  title: "RHOSP Networking Break-Fix Practice - Resolving 'No Route to Host' and 'Destination Host Unreachable' for SSH"
+  title: "Troubleshooting instance connectivity issue in Red Hat OpenStack Platform 18"
   start_page: rhosp-bfx-026::index.adoc
 
 content:
