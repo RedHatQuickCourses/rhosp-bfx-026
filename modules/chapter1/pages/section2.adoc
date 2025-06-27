@@ -16,11 +16,9 @@ Provide the gocubsgo as a password.
 == Success Criteria
 Successful completion of this activity requires that ssh to instance is working:
 ----
-(overcloud) [stack@director ~]$ ssh -i /tmp/scenario-bfx026-key.pem cirros@192.168.51.165
-[student@workstation ~]$ ssh -i /tmp/scenario-bfc026-key.pem cirros@192.168.51.165
-sign_and_send_pubkey: no mutual signature supported
-cirros@192.168.51.165's password:
-$
+[student@workstation ~]$ ssh -i /tmp/scenario-bfx026-key.pem cirros@192.168.51.98 cat /etc/cirros/version
+0.5.2
+[student@workstation ~]$
 ----
 
 [NOTE]
