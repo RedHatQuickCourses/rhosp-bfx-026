@@ -2,7 +2,7 @@
 
 == Check your work using the grading script:
 ----
-[student@workstation ~]$ lab grade bfx026
+[student@workstation scenarios_repo]$ ./lab grade bfx026
 Running grade action against scenario bfx026
 cirros@192.168.51.165's password:
 Grading scenario bfx026: PASSED!

@@ -32,7 +32,7 @@ The lab customization script is already cloned in the **/home/student/osp_traini
 .Sample output
 ----
 [student@workstation ~]$ cd /home/student/osp_training/scenarios_repo/
-[student@workstation ~]$ lab start bfx026
+[student@workstation scenarios_repo]$ ./lab start bfx026
 Running start action against scenario bfx026
 Run the following command:
 ssh -i /tmp/scenario-bfx026-key.pem cirros@192.168.51.165
